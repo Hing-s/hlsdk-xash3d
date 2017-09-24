@@ -1517,9 +1517,7 @@ class CPortal : public CBaseEntity
 public:
 	void Spawn(void);
 
-	static void Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity);
-	static void Shoot2(entvars_t *pevOwner, Vector vecStart, Vector vecAngles,Vector vecVelocity);
-
+	static void Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity, Vector vecAngles);
 	static void SelfCreate(entvars_t *pevOwner, Vector vecStart);
 
 	void Touch(CBaseEntity *pOther);

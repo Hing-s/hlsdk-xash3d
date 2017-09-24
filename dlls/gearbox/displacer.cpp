@@ -80,11 +80,11 @@ void CPortal::Animate(void)
 	UpdateBeams();
 }
 
-void CPortal::Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity)
+void CPortal::Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity, Vector vecAngles)
 {
 	CPortal *pSpit = GetClassPtr((CPortal *)NULL);
 	pSpit->Spawn();
-
+	pSpit->pev->angles = vecAngles;
 	UTIL_SetOrigin(pSpit->pev, vecStart);
 	pSpit->pev->velocity = vecVelocity *1.3;
 	pSpit->pev->owner = ENT(pevOwner);
@@ -93,33 +93,18 @@ void CPortal::Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity)
 	pSpit->pev->nextthink = gpGlobals->time + 0.1;
 }
 
-void CPortal::Shoot2(entvars_t *pevOwner, Vector vecStart, Vector vecAngles,Vector vecVelocity)
-{
-	CPortal *pSpit1 = GetClassPtr((CPortal *)NULL);
-	pSpit1->Spawn();
-
-	UTIL_SetOrigin(pSpit1->pev, vecStart);
-	pSpit1->pev->angles = vecAngles;
-
-	pSpit1->pev->velocity = vecVelocity;
-	pSpit1->pev->owner = ENT(pevOwner);
-
-	pSpit1->SetThink(&CPortal::Animate);
-	pSpit1->pev->nextthink = gpGlobals->time + 0.1;
-}
-
 void CPortal::SelfCreate(entvars_t *pevOwner,Vector vecStart)
 {
-	CPortal *pSpit2 = GetClassPtr((CPortal *)NULL);
-	pSpit2->Spawn();
-	pSpit2->ClearBeams();
-	UTIL_SetOrigin(pSpit2->pev, vecStart);
+	CPortal *pSelf = GetClassPtr((CPortal *)NULL);
+	pSelf->Spawn();
+	pSelf->ClearBeams();
+	UTIL_SetOrigin(pSelf->pev, vecStart);
 
-	pSpit2->pev->owner = ENT(pevOwner);
-	pSpit2->Circle();
-	pSpit2->SetTouch( NULL );
-	pSpit2->SetThink(&CPortal::ExplodeThink);
-	pSpit2->pev->nextthink = gpGlobals->time + 0.3;
+	pSelf->pev->owner = ENT(pevOwner);
+	pSelf->Circle();
+	pSelf->SetTouch( NULL );
+	pSelf->SetThink(&CPortal::ExplodeThink);
+	pSelf->pev->nextthink = gpGlobals->time + 0.3;
 }
 
 
@@ -685,7 +670,7 @@ void CDisplacer::Displace( void )
 	vecSrc = vecSrc + gpGlobals->v_right	* 8;
 	vecSrc = vecSrc + gpGlobals->v_up		* -12;
 
-	CPortal::Shoot(m_pPlayer->pev, vecSrc, gpGlobals->v_forward * 500);
+	CPortal::Shoot(m_pPlayer->pev, vecSrc, gpGlobals->v_forward * 500, m_pPlayer->pev->v_angle);
 #endif
 }
 

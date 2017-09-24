@@ -23,6 +23,8 @@
 #include "player.h"
 #include "soundent.h"
 #include "gamerules.h"
+#include "explode.h"
+#include "basemonster.h"
 
 enum w_penguin_e {
 	WPENGUIN_IDLE1 = 0,
@@ -171,22 +173,10 @@ void CPenguinGrenade::Killed(entvars_t *pevAttacker, int iGib)
 	// continue to call this function unless we acknowledge the Squeak's death now. (sjb)
 	pev->takedamage = DAMAGE_NO;
 
-	// play squeek blast
-	EMIT_SOUND_DYN(ENT(pev), CHAN_ITEM, "squeek/sqk_blast1.wav", 1, 0.5, 0, PITCH_NORM);
-
-	CSoundEnt::InsertSound(bits_SOUND_COMBAT, pev->origin, SMALL_EXPLOSION_VOLUME, 3.0);
-
-	UTIL_BloodDrips(pev->origin, g_vecZero, BloodColor(), 80);
-
-	if (m_hOwner != NULL)
-		RadiusDamage(pev, m_hOwner->pev, pev->dmg, CLASS_NONE, DMG_BLAST);
-	else
-		RadiusDamage(pev, pev, pev->dmg, CLASS_NONE, DMG_BLAST);
-
 	// reset owner so death message happens
-	if (m_hOwner != NULL)
-		pev->owner = m_hOwner->edict();
 
+ExplosionCreate( pev->origin, pev->angles, m_hOwner->edict(), 100, FALSE );
+::RadiusDamage ( pev->origin, pev, m_hOwner->pev ,100,  100 * 2.5 , CLASS_NONE, DMG_BLAST );
 	CBaseMonster::Killed(pevAttacker, GIB_ALWAYS);
 }
 

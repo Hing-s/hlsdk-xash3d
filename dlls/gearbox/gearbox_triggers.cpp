@@ -28,7 +28,8 @@ spawn and use functions for editor-placed triggers
 #include "trains.h"
 #include "gamerules.h"
 #include "triggers.h"
-
+#include "weapons.h"
+#include "sporegrenade.h"
 //=========================================================
 // CTriggerXenReturn
 //=========================================================
@@ -132,74 +133,167 @@ public:
 LINK_ENTITY_TO_CLASS(trigger_geneworm_hit, CTriggerMultiple);
 
 //=========================================================
-// CPlayerFreeze
+// Trigger to disable a player
 //=========================================================
 
 class CPlayerFreeze : public CBaseDelay
 {
-public:
-	void	Spawn(void);
-	void	Use(CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value);
-
-	virtual int		Save(CSave &save);
-	virtual int		Restore(CRestore &restore);
-	static	TYPEDESCRIPTION m_SaveData[];
-
-	EHANDLE m_hPlayer;
+	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 };
 
-LINK_ENTITY_TO_CLASS(trigger_playerfreeze, CPlayerFreeze);
-
-
-TYPEDESCRIPTION CPlayerFreeze::m_SaveData[] =
+void CPlayerFreeze::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
-	DEFINE_FIELD(CPlayerFreeze, m_hPlayer, FIELD_EHANDLE),
-};
+	CBaseEntity *pPlayer;
+	pPlayer = CBaseEntity::Instance(g_engfuncs.pfnPEntityOfEntIndex( 1 ));
 
-IMPLEMENT_SAVERESTORE(CPlayerFreeze, CBaseDelay);
-
-void CPlayerFreeze::Spawn(void)
-{
-	CBaseDelay::Spawn();
-
-	m_hPlayer.Set(NULL);
-
-	CBaseEntity* pPlayer = UTIL_PlayerByIndex( 1 );
-
-	if (pPlayer)
+	if (pPlayer && pPlayer->pev->flags & FL_CLIENT)
 	{
-		m_hPlayer = pPlayer;
+		if (pPlayer->pev->flags & FL_FROZEN)
+		{
+			// unfreeze him
+			((CBasePlayer *)pPlayer)->EnableControl(TRUE);
+		}
+		else
+		{
+			// freeze him
+			((CBasePlayer *)pPlayer)->EnableControl(FALSE);
+		}
 	}
 }
 
-void CPlayerFreeze::Use(CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value)
+LINK_ENTITY_TO_CLASS( trigger_playerfreeze, CPlayerFreeze );
+
+class CBlowerCannon : public CBaseEntity
 {
-	CBaseEntity* pPlayer = NULL;
+public:
+	void Spawn( void );
+	//void Precache( void );
+	void KeyValue(KeyValueData* pkvd);
+	void Fire( void );
 
-	if (!m_hPlayer.Get())
+	virtual Vector UpdateTargetPosition(CBaseEntity *pTarget)
 	{
-		CBaseEntity* pPlayer = UTIL_PlayerByIndex(1);
-
-		if (pPlayer)
-		{
-			m_hPlayer = pPlayer;
-		}
+		return pTarget->BodyTarget(pev->origin);
 	}
 
-	if (m_hPlayer.Get())
+	void EXPORT Touch( CBaseEntity *pOther );
+	void EXPORT ToggleUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+
+	virtual int		Save(CSave &save);
+	virtual int		Restore(CRestore &restore);
+
+	static	TYPEDESCRIPTION m_SaveData[];
+
+	int WeaponType;
+	float Delay;
+	int FireType;
+	int test;
+	Vector m_sightOrigin;
+
+};
+LINK_ENTITY_TO_CLASS(env_blowercannon, CBlowerCannon);
+
+TYPEDESCRIPTION	CBlowerCannon::m_SaveData[] =
+{
+	DEFINE_FIELD(CBlowerCannon, FireType, FIELD_INTEGER),
+	DEFINE_FIELD(CBlowerCannon, test, FIELD_INTEGER),
+	DEFINE_FIELD(CBlowerCannon, WeaponType, FIELD_INTEGER),
+	DEFINE_FIELD(CBlowerCannon, Delay, FIELD_FLOAT),
+	DEFINE_FIELD(CBlowerCannon, m_sightOrigin, FIELD_VECTOR),
+};
+IMPLEMENT_SAVERESTORE( CBlowerCannon, CBaseEntity )
+
+
+void CBlowerCannon::KeyValue(KeyValueData *pkvd)
+{
+	if (FStrEq(pkvd->szKeyName, "firetype"))
 	{
-#ifdef DEBUG
-		ASSERT(m_hPlayer != NULL);
-#endif
-		m_hPlayer->pev->movetype = (m_hPlayer->pev->movetype == MOVETYPE_NONE)
-			? MOVETYPE_WALK
-			: MOVETYPE_NONE;
+		FireType = (int)atoi(pkvd->szValue);
+		pkvd->fHandled = TRUE;
+	}
+	else if (FStrEq(pkvd->szKeyName, "delay"))
+	{
+		Delay = (float)atof(pkvd->szValue);
+		pkvd->fHandled = TRUE;
+	}
+	else if (FStrEq(pkvd->szKeyName, "weaptype"))
+	{
+		WeaponType = (int)atoi(pkvd->szValue);
+		pkvd->fHandled = TRUE;
 	}
 	else
-	{
-		ALERT(at_console, "ERROR: Couldn't find player entity.\n");
-	}
+		CBaseEntity::KeyValue(pkvd);
+}
 
-	SetThink(&CPlayerFreeze::SUB_Remove);
-	pev->nextthink = gpGlobals->time;
+void CBlowerCannon::Spawn(void)
+{
+	pev->movetype = MOVETYPE_NONE;
+	pev->classname = MAKE_STRING("env_blowercannon");
+	pev->solid = SOLID_TRIGGER;
+	test = 1;
+	UTIL_SetSize(pev, Vector(-16, -16, -16), Vector(16, 16, 16));
+
+	if( FireType == 1)
+		SetUse( &CBlowerCannon::ToggleUse );
+	else if( FireType == 2)
+		SetTouch( &CBlowerCannon::Touch );
+}
+
+void CBlowerCannon::ToggleUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	//ALERT(at_console, "In USE!\n");
+	SetThink( &CBlowerCannon::Fire );
+	pev->nextthink = gpGlobals->time + Delay;
+}
+
+void CBlowerCannon::Touch( CBaseEntity *pOther)
+{
+	//ALERT(at_console, "TOUCH!\n");
+	SetThink( &CBlowerCannon::Fire );
+	pev->nextthink = gpGlobals->time + Delay;
+}
+
+void CBlowerCannon::Fire( void )
+{
+	//ALERT(at_console, "thinking!\n");
+
+	edict_t *pTarget = FIND_ENTITY_BY_TARGETNAME( pTarget, STRING( pev->target ) );
+
+	CBaseEntity *pInstance = CBaseEntity::Instance(pTarget);
+
+
+	if( pInstance && pInstance->IsAlive() )
+	{
+		m_sightOrigin = UpdateTargetPosition( pInstance );
+
+		Vector direction = m_sightOrigin - pev->origin;
+		//direction = m_sightOrigin - barrelEnd;
+		Vector angles = UTIL_VecToAngles( direction );
+		UTIL_MakeVectors( angles );
+
+		if( WeaponType == 1 )//spore rocket
+		{
+			CSpore *pSpore = CSpore::CreateSporeRocket( pev->origin, angles, this );
+			pSpore->pev->velocity = pSpore->pev->velocity + gpGlobals->v_forward * 1500;
+		}
+		else if( WeaponType == 2 )//spore grenade
+		{
+			CSpore *pSpore = CSpore::CreateSporeGrenade( pev->origin, angles, this );
+			pSpore->pev->velocity = pSpore->pev->velocity + gpGlobals->v_forward * 1000;
+		}
+		else if( WeaponType == 3 )//shock beam
+		{
+			CBaseEntity *pShock = CBaseEntity::Create( "shock_beam", pev->origin, angles, this->edict() );
+			pShock->pev->velocity = gpGlobals->v_forward * 2000;
+		}
+		else if( WeaponType == 4 )//displacer ball
+		{
+			CPortal::Shoot(this->pev, pev->origin, gpGlobals->v_forward * 600, angles);
+		}
+	}
+	if( test )
+		pev->nextthink = gpGlobals->time + 3;
+	else
+		pev->nextthink = gpGlobals->time + Delay;
+	test = 0;
 }
