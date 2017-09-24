@@ -117,7 +117,7 @@ void CPortal::SelfCreate(entvars_t *pevOwner,Vector vecStart)
 
 	pSpit2->pev->owner = ENT(pevOwner);
 	pSpit2->Circle();
-	pSpit->SetTouch( NULL );
+	pSpit2->SetTouch( NULL );
 	pSpit2->SetThink(&CPortal::ExplodeThink);
 	pSpit2->pev->nextthink = gpGlobals->time + 0.3;
 }

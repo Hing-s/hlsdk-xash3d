@@ -1063,10 +1063,7 @@ public:
 	void Holster(int skiplocal = 0);
 	void WeaponIdle(void); 
 
-	void ItemPreFrame(void);
-	void ItemPostFrame( void );
-
-	BOOL PlayEmptySound(void);
+	BOOL PlayEmptySound(void);//
 
 	virtual BOOL UseDecrement(void)
 	{
@@ -1079,29 +1076,43 @@ public:
 
 	int		m_iFireState;
 	int		m_iFireMode;
+	int		m_iBeam;
+	CBeam *m_pBeam;
 	CBaseEntity* m_hTargetEarth;
 	CBaseEntity* m_hTargetXen;
 
 	BOOL HasAmmo(void);
 	void UseAmmo(int count);
 	BOOL CanFireDisplacer() const;
+	BOOL CanFireDisplacer2() const;
 
-	enum DISPLACER_FIRESTATE { FIRESTATE_NONE = 0, FIRESTATE_SPINUP, FIRESTATE_SPIN, FIRESTATE_FIRE };
+	enum DISPLACER_FIRESTATE { FIRESTATE_NONE = 0, FIRESTATE_SPINUP, FIRESTATE_FIRE };
 	enum DISPLACER_FIREMODE { FIREMODE_NONE = 0, FIREMODE_FORWARD, FIREMODE_BACKWARD };
-	enum DISPLACER_EFFECT { EFFECT_NONE = 0, EFFECT_CORE };
 
 private:
 	void ClearSpin( void );
 	void SpinUp(int iFireMode);
-	void Spin( void );
 	void Fire( BOOL fIsPrimary );
 	void Teleport( void );
 	void Displace( void );
-	void UpdateEffects( void );
-	BOOL ShouldUpdateEffects( void ) const;
+	void CreateEffects( void );
 
 private:
 	unsigned short m_usDisplacer;
+};
+
+class CEagleLaser : public CBaseEntity
+{
+	void Spawn( void );
+	void Precache( void );
+
+	int	ObjectCaps( void ) { return FCAP_DONT_SAVE; }
+
+public:
+	void Suspend( float flSuspendTime );
+	void EXPORT Revive( void );
+
+	static CEagleLaser *CreateSpotDeagle( void );
 };
 
 class CEagle : public CBasePlayerWeapon
@@ -1109,29 +1120,28 @@ class CEagle : public CBasePlayerWeapon
 public:
 
 #ifndef CLIENT_DLL
-	int		Save(CSave &save);
-	int		Restore(CRestore &restore);
+	int		Save( CSave &save );
+	int		Restore( CRestore &restore );
 	static	TYPEDESCRIPTION m_SaveData[];
 #endif
 
-	void Spawn(void);
-	void Precache(void);
-	int iItemSlot(void) { return 2; }
+	void Spawn( void );
+	void Precache( void );
+	int iItemSlot( void ) { return 2; }
 	int GetItemInfo(ItemInfo *p);
 
-	void PrimaryAttack(void);
-	void SecondaryAttack(void);
-	BOOL Deploy(void);
-	void Holster(int skiplocal = 0);
+	void PrimaryAttack( void );
+	void SecondaryAttack( void );
+	BOOL Deploy( void );
+	void Holster( int skiplocal = 0 );
+	void Reload( void );
+	void WeaponIdle( void );
 
-	void Reload(void);
-	void WeaponIdle(void);
-
-	void UpdateSpot(void);
-	BOOL ShouldWeaponIdle(void) { return TRUE; };
-
-	virtual BOOL UseDecrement(void)
-	{
+	void UpdateSpot( void );
+	CEagleLaser *m_pEagleLaser;
+	int m_fEagleLaserActive;
+	virtual BOOL UseDecrement( void )
+	{ 
 #if defined( CLIENT_WEAPONS )
 		return TRUE;
 #else
@@ -1139,14 +1149,13 @@ public:
 #endif
 	}
 
-	CLaserSpot *m_pSpot;
-	int m_fSpotActive;
-
 private:
 	int m_iShell;
+	
 
-	unsigned short m_usFireEagle;
+	unsigned short m_usEagle;
 };
+
 
 class CGrappleTonguetip;
 
@@ -1388,6 +1397,33 @@ private:
 	float m_flHoldStartTime;
 };
 
+class CShockBeam : public CBaseEntity
+{
+public:
+	void Spawn( void );
+	void Precache( void );
+	int  Classify ( void );
+	void EXPORT ShockTouch( CBaseEntity *pOther );
+	static CShockBeam *Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity);
+	void EXPORT FadeShock( void );
+	void EXPORT ExplodeThink( void );
+	void EXPORT BlastOn( void );
+	void EXPORT BlastOff( void );
+	void Glow( void );
+	void GetAttachment ( int iAttachment, Vector &origin, Vector &angles );
+
+	CBeam *m_pBeam;
+	CBeam *m_pNoise;
+	CSprite *m_pSprite;
+
+	int m_iFadeCount;
+	int m_iTrail;
+
+	Vector m_vecForward;
+
+	CBaseEntity *pShockedEnt;
+};
+
 
 class CShockrifle : public CHgun
 {
@@ -1451,7 +1487,7 @@ public:
 	void Holster(int skiplocal = 0);
 	void Reload(void);
 	void WeaponIdle(void);
-	void ItemPostFrame(void);
+	//void ItemPostFrame(void);
 
 	BOOL ShouldWeaponIdle(void) { return TRUE; };
 
@@ -1473,6 +1509,36 @@ public:
 
 private:
 	unsigned short m_usSniper;
+};
+#define MAX_PORTAL_BEAMS 5
+
+class CPortal : public CBaseEntity
+{
+public:
+	void Spawn(void);
+
+	static void Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity);
+	static void Shoot2(entvars_t *pevOwner, Vector vecStart, Vector vecAngles,Vector vecVelocity);
+
+	static void SelfCreate(entvars_t *pevOwner, Vector vecStart);
+
+	void Touch(CBaseEntity *pOther);
+	void EXPORT Animate(void);
+	void EXPORT ExplodeThink( void );
+	void Circle( void );
+
+
+	virtual int		Save(CSave &save);
+	virtual int		Restore(CRestore &restore);
+	static	TYPEDESCRIPTION m_SaveData[];
+
+	int  m_maxFrame;
+	CBeam* m_pBeam[MAX_PORTAL_BEAMS];
+
+	void CreateBeams();
+	void ClearBeams();
+	void UpdateBeams();
+	CBaseEntity *pRemoveEnt;
 };
 
 class CSporelauncher : public CShotgun

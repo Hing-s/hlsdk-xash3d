@@ -143,28 +143,21 @@ void CSporelauncher::PrimaryAttack()
 	flags = 0;
 #endif
 
-
-	// m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
-
-	Vector vecSrc = m_pPlayer->GetGunPosition();
-	Vector vecAiming = m_pPlayer->GetAutoaimVector(AUTOAIM_5DEGREES);
-
 	Vector vecDir;
-	Vector vecVel;
+	// m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
+	// player "shoot" animation
+	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
 
-	UTIL_MakeVectors(m_pPlayer->pev->v_angle);
-
-	vecSrc = vecSrc + gpGlobals->v_forward	* 16;
-	vecSrc = vecSrc + gpGlobals->v_right	* 8;
-	vecSrc = vecSrc + gpGlobals->v_up		* -12;
-
-	vecVel = gpGlobals->v_forward * 900;
-	vecDir = gpGlobals->v_forward + gpGlobals->v_right + gpGlobals->v_up;
-	vecDir = vecDir;
 
 #ifndef CLIENT_DLL
-	CSporeGrenade::ShootContact(m_pPlayer->pev, vecSrc, vecVel);
+		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+		Vector vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -8;
+
+		CSpore *pSpore = CSpore::CreateSporeRocket( vecSrc, m_pPlayer->pev->v_angle, m_pPlayer );
+		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+		pSpore->pev->velocity = pSpore->pev->velocity + gpGlobals->v_forward * 1500;
 #endif
+
 
 	PLAYBACK_EVENT_FULL(
 		flags,
@@ -230,30 +223,21 @@ void CSporelauncher::SecondaryAttack(void)
 	flags = 0;
 #endif
 
-	m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
+	//m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
 
+	Vector vecDir;
 	// player "shoot" animation
 	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
 
-	Vector vecSrc = m_pPlayer->GetGunPosition();
-	Vector vecAiming = m_pPlayer->GetAutoaimVector(AUTOAIM_2DEGREES);
-
-	Vector vecDir;
-	Vector vecVel;
-
-	UTIL_MakeVectors(m_pPlayer->pev->v_angle);
-
-	vecSrc = vecSrc + gpGlobals->v_forward	* 16;
-	vecSrc = vecSrc + gpGlobals->v_right	* 8;
-	vecSrc = vecSrc + gpGlobals->v_up		* -12;
-
-	vecVel = gpGlobals->v_forward * 800;
-	vecDir = gpGlobals->v_forward + gpGlobals->v_right + gpGlobals->v_up;
-	vecDir = vecDir;
-
 #ifndef CLIENT_DLL
-	CSporeGrenade::ShootTimed(m_pPlayer->pev, vecSrc, vecVel, RANDOM_FLOAT(5, 6));
+		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+		Vector vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -8;
+
+		CSpore *pSpore = CSpore::CreateSporeGrenade( vecSrc, m_pPlayer->pev->v_angle, m_pPlayer );
+		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+		pSpore->pev->velocity = pSpore->pev->velocity + gpGlobals->v_forward * 700;
 #endif
+
 
 	PLAYBACK_EVENT_FULL(
 		flags, 
@@ -381,30 +365,3 @@ void CSporelauncher::WeaponIdle(void)
 		}
 	}
 }
-
-
-class CSporeAmmo : public CBasePlayerAmmo
-{
-	void Spawn(void)
-	{
-		Precache();
-		SET_MODEL(ENT(pev), "models/spore.mdl");
-		CBasePlayerAmmo::Spawn();
-	}
-	void Precache(void)
-	{
-		PRECACHE_MODEL("models/spore.mdl");
-		PRECACHE_SOUND("weapons/spore_ammo.wav");
-	}
-	BOOL AddAmmo(CBaseEntity *pOther)
-	{
-		int bResult = (pOther->GiveAmmo(AMMO_SPORE_GIVE, "Spores", SPORE_MAX_CARRY) != -1);
-		if (bResult)
-		{
-			EMIT_SOUND(ENT(pev), CHAN_ITEM, "weapons/spore_ammo.wav", 1, ATTN_NORM);
-		}
-		return bResult;
-	}
-};
-
-LINK_ENTITY_TO_CLASS(ammo_spore, CSporeAmmo);

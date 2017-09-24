@@ -67,7 +67,7 @@ void CShockrifle::Precache(void)
 
 	m_usShockFire = PRECACHE_EVENT(1, "events/shock.sc");
 
-	UTIL_PrecacheOther("shock");
+	UTIL_PrecacheOther("shock_beam");
 }
 
 int CShockrifle::AddToPlayer(CBasePlayer *pPlayer)
@@ -135,6 +135,14 @@ void CShockrifle::PrimaryAttack()
 	{
 		return;
 	}
+	// Kill if fire underwater
+	if (m_pPlayer->pev->waterlevel == 3)
+	{
+		entvars_t *pevOwner = VARS( pev->owner );
+		::RadiusDamage( pev->origin, pev,pevOwner, 300, 300, CLASS_NONE, DMG_ENERGYBEAM );
+		EMIT_SOUND( ENT( pev ), CHAN_ITEM, "weapons/shock_discharge.wav", 1, ATTN_NORM );
+		return;
+	}
 
 #ifndef CLIENT_DLL
 	UTIL_MakeVectors(m_pPlayer->pev->v_angle);
@@ -145,10 +153,11 @@ void CShockrifle::PrimaryAttack()
 	vecSrc = vecSrc + gpGlobals->v_forward * 8;
 	vecSrc = vecSrc + gpGlobals->v_right * 8;
 	vecSrc = vecSrc + gpGlobals->v_up * -12;
+	CShockBeam *pShock = CShockBeam::Shoot( m_pPlayer->pev, vecSrc, gpGlobals->v_forward * 2000 );
 
-	CBaseEntity *pShock = CBaseEntity::Create("shock", vecSrc, m_pPlayer->pev->v_angle, m_pPlayer->edict());
+/*	CBaseEntity *pShock = CBaseEntity::Create("shock_beam", vecSrc, m_pPlayer->pev->v_angle, m_pPlayer->edict());
 	pShock->pev->velocity = gpGlobals->v_forward * 900;
-
+*/
 	m_flRechargeTime = gpGlobals->time + 0.5;
 #endif
 

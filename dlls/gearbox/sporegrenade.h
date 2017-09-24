@@ -15,44 +15,30 @@
 
 #ifndef SPORE_GRENADE_H
 #define SPORE_GRENADE_H
-
-
-// Contact/Timed spore grenade
-class CSporeGrenade : public CGrenade
+//=================================
+// Opposing Forces spore ammo plant 
+// Copyright Demiurge, Copyright Highlander
+//=================================
+class CSpore : public CBaseMonster
 {
 public:
-	virtual int		Save(CSave &save);
-	virtual int		Restore(CRestore &restore);
+	void Spawn( void );
+	void Precache( void );
+	void Glow( void );
+	void Explode( void );
+	void BounceSound( void );
+	void EXPORT ExplodeThink( CBaseEntity *pOther );
+	void EXPORT BounceThink( CBaseEntity *pOther );
+	void EXPORT FlyThink( void );
+	static CSpore *CreateSporeRocket( Vector vecOrigin, Vector vecAngles, CBaseEntity *pOwner );
+	static CSpore *CreateSporeGrenade( Vector vecOrigin, Vector vecAngles, CBaseEntity *pOwner );
 
-	static	TYPEDESCRIPTION m_SaveData[];
+	float m_iDrips;
+	float m_iGlow;
+	float m_iExplode;
+	float m_iExplodeC;
+	int m_iPrimaryMode;
 
-	void Precache(void);
-	void Spawn(void);
-
-	static CGrenade *ShootTimed(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity, float time);
-	static CGrenade *ShootContact(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity);
-
-	void Explode(TraceResult *pTrace, int bitsDamageType);
-	void EXPORT Smoke(void);
-
-	void EXPORT BounceTouch(CBaseEntity *pOther); 
-	void EXPORT SlideTouch(CBaseEntity *pOther);
-	void EXPORT ExplodeTouch(CBaseEntity *pOther);
-	void EXPORT DangerSoundThink(void);
-	void EXPORT PreDetonate(void);
-	void EXPORT Detonate(void);
-	void EXPORT DetonateUse(CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value);
-	void EXPORT TumbleThink(void);
-	void EXPORT FlyThink(void);
-
-	virtual void BounceSound(void);
-	virtual int	BloodColor(void) { return DONT_BLEED; }
-	virtual void Killed(entvars_t *pevAttacker, int iGib);
-	static void SpawnTrailParticles(const Vector& origin, const Vector& direction, int modelindex, int count, float speed, float noise);
-	static void SpawnExplosionParticles(const Vector& origin, const Vector& direction, int modelindex, int count, float speed, float noise);
-
-	CSprite* m_pSporeGlow;
-	float m_flNextSpriteTrailSpawn;
+	CSprite *m_pSprite;
 };
-
 #endif // SPORE_GRENADE_H

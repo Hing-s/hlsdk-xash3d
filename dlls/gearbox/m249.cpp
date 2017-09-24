@@ -132,8 +132,8 @@ void CM249::PrimaryAttack()
 		return;
 	}
 
-	m_pPlayer->pev->punchangle.x = RANDOM_FLOAT( 1.0f, 1.5f );
-	m_pPlayer->pev->punchangle.y = RANDOM_FLOAT( -0.5f, -0.2f );
+	m_pPlayer->pev->punchangle.x = RANDOM_FLOAT( 1.0f, 2.5f );
+	m_pPlayer->pev->punchangle.y = RANDOM_FLOAT( -1.0f, -2.5f );
 
 	m_pPlayer->m_iWeaponVolume = NORMAL_GUN_VOLUME;
 	m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;
@@ -182,10 +182,10 @@ void CM249::PrimaryAttack()
 	{
 		float flZVel = m_pPlayer->pev->velocity.z;
 
-		m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * (40 + (RANDOM_LONG(1, 2) * 2));
+		m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * (60 + (RANDOM_LONG(1, 2) * 2));
 
 		// Add backward velocity
-		m_pPlayer->pev->velocity.z = flZVel;
+		m_pPlayer->pev->velocity.z = flZVel*2;
 	}
 #endif
 
@@ -207,7 +207,7 @@ void CM249::Reload(void)
 	if (m_pPlayer->ammo_556 <= 0)
 		return;
 
-	DefaultReload(M249_MAX_CLIP, M249_RELOAD1, 1.5);
+	DefaultReload(M249_MAX_CLIP, M249_RELOAD1, 3.65);
 }
 
 
