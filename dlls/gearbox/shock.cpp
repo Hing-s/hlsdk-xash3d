@@ -255,8 +255,8 @@ void CShockBeam::BlastOn ( void )
 		m_pBeam->SetScrollRate( 10 );
 		m_pBeam->SetNoise( 0 );
 		m_pBeam->SetFlags( BEAM_FSHADEOUT );
-		//m_pBeam->pev->spawnflags |= SF_SPRITE_TEMPORARY;
-		//m_pBeam->pev->flags |= FL_SKIPLOCALHOST;
+		m_pBeam->pev->spawnflags |= SF_SPRITE_TEMPORARY;
+		m_pBeam->pev->flags |= FL_SKIPLOCALHOST;
 		m_pBeam->SetColor( 0, 253, 253 );
 	}
 	m_pNoise = CBeam::BeamCreate( "sprites/lgtning.spr", 30 );
@@ -274,10 +274,10 @@ void CShockBeam::BlastOn ( void )
 		m_pNoise->SetNoise( 30 );
 		m_pNoise->SetFlags( BEAM_FSHADEOUT );
 		m_pNoise->SetColor( 255, 255, 157 );
-		//m_pNoise->pev->spawnflags |= SF_SPRITE_TEMPORARY;
-		//m_pNoise->pev->flags |= FL_SKIPLOCALHOST;
-		//m_pNoise->pev->rendermode = kRenderTransTexture;
-		//m_pNoise->pev->renderamt = 180;
+		m_pNoise->pev->spawnflags |= SF_SPRITE_TEMPORARY;
+		m_pNoise->pev->flags |= FL_SKIPLOCALHOST;
+		m_pNoise->pev->rendermode = kRenderTransTexture;
+		m_pNoise->pev->renderamt = 180;
 	}
 	EXPORT void RelinkBeam();
 }

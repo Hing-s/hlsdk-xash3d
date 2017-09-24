@@ -49,24 +49,22 @@ void CLoader::Spawn()
 {
 	Precache();
 
-	SET_MODEL(ENT(pev), "models/loader.mdl");
+	if (pev->model)
+		SET_MODEL(ENT(pev), STRING(pev->model)); //LRC
+	else
+		SET_MODEL(ENT(pev), "models/loader.mdl");
 
-	UTIL_SetSize(pev, VEC_HULL_MIN, VEC_HULL_MAX);
-	
+	UTIL_SetSize(pev, Vector( 0, 0, 0) , Vector( 0, 0, 0));
+
 	pev->solid = SOLID_SLIDEBOX;
 	pev->movetype = MOVETYPE_STEP;
-	m_bloodColor = BLOOD_COLOR_RED;
-	pev->health = 8;
+	m_bloodColor = DONT_BLEED;
+	pev->health = 100;
 	m_flFieldOfView = 0.5;// indicates the width of this monster's forward view cone ( as a dotproduct result )
 	m_MonsterState = MONSTERSTATE_NONE;
 
 	MonsterInit();
-
-	if (pev->spawnflags & SF_LOADER_NOTSOLID)
-	{
-		pev->solid = SOLID_NOT;
-		pev->takedamage = DAMAGE_NO;
-	}
+	pev->takedamage = DAMAGE_NO;
 }
 
 //=========================================================

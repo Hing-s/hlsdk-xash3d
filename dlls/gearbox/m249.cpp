@@ -183,9 +183,6 @@ void CM249::PrimaryAttack()
 		float flZVel = m_pPlayer->pev->velocity.z;
 
 		m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * (130 + (RANDOM_LONG(1, 2) * 2));
-
-		// Add backward velocity
-		m_pPlayer->pev->velocity.z = flZVel*2;
 	}
 #endif
 

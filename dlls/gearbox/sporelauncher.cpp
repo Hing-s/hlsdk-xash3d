@@ -71,7 +71,6 @@ void CSporelauncher::Precache(void)
 
 	PRECACHE_MODEL("sprites/bigspit.spr");
 	m_iSquidSpitSprite = PRECACHE_MODEL("sprites/tinyspit.spr");
-	UTIL_PrecacheOther("monster_spore");
 
 	m_usSporeFire = PRECACHE_EVENT(1, "events/spore.sc");
 }
