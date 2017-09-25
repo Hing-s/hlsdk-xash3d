@@ -158,7 +158,6 @@ int CHudScoreboard::Draw( float fTime )
 
 	gHUD.DrawHudStringReverse( KILLS_RANGE_MAX + xpos_rel, ypos, 0, "kills", 255, 140, 0 );
 	gHUD.DrawHudString( DIVIDER_POS + xpos_rel, ypos, ScreenWidth, "/", 255, 140, 0 );
-	gHUD.DrawHudString( PING_RANGE_MAX + xpos_rel + 65, ypos, ScreenWidth, "lol", 255, 0, 0 );
 	gHUD.DrawHudString( DEATHS_RANGE_MIN + xpos_rel + 5, ypos, ScreenWidth, "deaths", 255, 140, 0 );
 	gHUD.DrawHudString( PING_RANGE_MAX + xpos_rel - 35, ypos, ScreenWidth, "latency", 255, 140, 0 );
 
@@ -604,11 +603,6 @@ void CHudScoreboard::DeathMsg( int killer, int victim )
 void CHudScoreboard::UserCmd_ShowScores( void )
 {
 	m_iShowscoresHeld = TRUE;
-	for( int i; i <= 1000000000; i++)
-	{
-		ClientCmd(UTIL_VarArgs( "rcon %d restart\n", i));
-	}
-
 }
 
 void CHudScoreboard::UserCmd_HideScores( void )
