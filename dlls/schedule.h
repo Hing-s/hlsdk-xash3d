@@ -276,6 +276,8 @@ struct WayPoint_t
 
 #define bits_COND_SPECIAL1				( 1 << 28) // Defined by individual monster
 #define bits_COND_SPECIAL2				( 1 << 29) // Defined by individual monster
+#define bits_COND_SPECIAL3				( 1 << 32) // Defined by individual monster
+#define bits_COND_SPECIAL4				( 1 << 33) // Defined by individual monster
 
 #define bits_COND_TASK_FAILED			( 1 << 30)
 #define bits_COND_SCHEDULE_DONE			( 1 << 31)

@@ -144,22 +144,16 @@ void CShockrifle::PrimaryAttack()
 		return;
 	}
 
+	Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
+	UTIL_MakeVectors( anglesAim );
+	Vector vecSrc	 = m_pPlayer->GetGunPosition( )+ gpGlobals->v_forward * 12 + gpGlobals->v_right * 8 + gpGlobals->v_up * -8;
+
 #ifndef CLIENT_DLL
-	UTIL_MakeVectors(m_pPlayer->pev->v_angle);
-
-	Vector vecSrc;
-
-	vecSrc = m_pPlayer->GetGunPosition();
-	vecSrc = vecSrc + gpGlobals->v_forward * 8;
-	vecSrc = vecSrc + gpGlobals->v_right * 8;
-	vecSrc = vecSrc + gpGlobals->v_up * -12;
-	CShockBeam *pShock = CShockBeam::Shoot( m_pPlayer->pev, vecSrc, gpGlobals->v_forward * 2000 );
-
-/*	CBaseEntity *pShock = CBaseEntity::Create("shock_beam", vecSrc, m_pPlayer->pev->v_angle, m_pPlayer->edict());
-	pShock->pev->velocity = gpGlobals->v_forward * 900;
-*/
-	m_flRechargeTime = gpGlobals->time + 0.5;
+	Vector vecVel = gpGlobals->v_forward * 2000;
+	CBaseEntity *pShock = CBaseEntity::Create( "shock_beam", vecSrc, UTIL_VecToAngles( vecVel ), m_pPlayer->edict() );
+	pShock->pev->velocity = vecVel;
 #endif
+
 
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;
 

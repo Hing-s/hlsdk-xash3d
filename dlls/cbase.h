@@ -108,6 +108,7 @@ class CBaseEntity;
 class CBaseMonster;
 class CBasePlayerItem;
 class CSquadMonster;
+class CRCAllyMonster;
 
 #define	SF_NORESPAWN	( 1 << 30 )// !!!set this bit on guns and stuff that should never respawn.
 
@@ -197,6 +198,9 @@ public:
 	virtual	BOOL IsPlayer( void ) { return FALSE; }
 	virtual BOOL IsNetClient( void ) { return FALSE; }
 	virtual const char *TeamID( void ) { return ""; }
+	virtual CRCAllyMonster *MyTalkSquadMonsterPointer( void ) { return NULL;}
+	virtual BOOL IsMonster(){ return FALSE;}
+
 
 	//virtual void SetActivator( CBaseEntity *pActivator ) {}
 	virtual CBaseEntity *GetNextTarget( void );
@@ -371,6 +375,7 @@ public:
 	float m_flReleaseThrow;
 	int m_chargeReady;
 	int m_fInAttack;
+	//EHANDLE GrappleKill;
 
 	enum EGON_FIRESTATE { FIRE_OFF, FIRE_CHARGE };
 	int m_fireState;

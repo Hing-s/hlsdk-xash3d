@@ -363,10 +363,10 @@ void CStrooper::HandleAnimEvent(MonsterEvent_t *pEvent)
 		{
 			vecGunAngles = (m_vecEnemyLKP - vecGunPos).Normalize();
 		}
+		Vector vecVel = gpGlobals->v_forward * 2000;
 
-		//CBaseEntity *pShock = CBaseEntity::Create("shock", vecGunPos, pev->angles, edict());
-		vecGunAngles.z += RANDOM_FLOAT( -0.05, 0 );
-		CShockBeam *pShock = CShockBeam::Shoot( pev, vecGunPos, vecGunAngles * 2000);
+		CBaseEntity *pShock = CBaseEntity::Create("shock_beam", vecGunPos, UTIL_VecToAngles( vecVel ), edict());
+		pShock->pev->velocity = vecVel;
 
 		// Play fire sound.
 		EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/shock_fire.wav", 1, ATTN_NORM);

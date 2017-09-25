@@ -29,6 +29,7 @@
 #include "saverestore.h"
 #include "weapons.h"
 #include "scripted.h"
+#include "rcallymonster.h"
 #include "squadmonster.h"
 #include "decals.h"
 #include "soundent.h"
@@ -106,7 +107,8 @@ TYPEDESCRIPTION	CBaseMonster::m_SaveData[] =
 	DEFINE_FIELD( CBaseMonster, m_scriptState, FIELD_INTEGER ),
 	DEFINE_FIELD( CBaseMonster, m_pCine, FIELD_CLASSPTR ),
 
-	DEFINE_FIELD( CBaseMonster, m_glowShellTime, FIELD_TIME ),
+	DEFINE_FIELD( CBaseMonster, m_glowShellStartTime, FIELD_TIME ),
+	DEFINE_FIELD( CBaseMonster, m_glowShellDuration, FIELD_FLOAT ),
 
 	DEFINE_FIELD( CBaseMonster, m_glowShellColor, FIELD_VECTOR ),
 	DEFINE_FIELD( CBaseMonster, m_glowShellUpdate, FIELD_BOOLEAN ),
@@ -1375,18 +1377,17 @@ int CBaseMonster::CheckLocalMove( const Vector &vecStart, const Vector &vecEnd, 
 			iReturn = LOCALMOVE_INVALID_DONT_TRIANGULATE;
 		}
 	}
-	/*
-	// uncommenting this block will draw a line representing the nearest legal move.
-	WRITE_BYTE( MSG_BROADCAST, SVC_TEMPENTITY );
-	WRITE_BYTE( MSG_BROADCAST, TE_SHOWLINE );
-	WRITE_COORD( MSG_BROADCAST, pev->origin.x );
-	WRITE_COORD( MSG_BROADCAST, pev->origin.y );
-	WRITE_COORD( MSG_BROADCAST, pev->origin.z );
-	WRITE_COORD( MSG_BROADCAST, vecStart.x );
-	WRITE_COORD( MSG_BROADCAST, vecStart.y );
-	WRITE_COORD( MSG_BROADCAST, vecStart.z );
-	*/
-
+/*
+		// uncommenting this block will draw a line representing the nearest legal move.
+		WRITE_BYTE( MSG_BROADCAST, SVC_TEMPENTITY );
+		WRITE_BYTE( MSG_BROADCAST, TE_SHOWLINE );
+		WRITE_COORD( MSG_BROADCAST, pev->origin.x );
+		WRITE_COORD( MSG_BROADCAST, pev->origin.y );
+		WRITE_COORD( MSG_BROADCAST, pev->origin.z );
+		WRITE_COORD( MSG_BROADCAST, vecStart.x );
+		WRITE_COORD( MSG_BROADCAST, vecStart.y );
+		WRITE_COORD( MSG_BROADCAST, vecStart.z );
+*/
 	// since we've actually moved the monster during the check, undo the move.
 	UTIL_SetOrigin( pev, vecStartPos );
 
@@ -1541,12 +1542,16 @@ BOOL CBaseMonster::BuildRoute( const Vector &vecGoal, int iMoveFlag, CBaseEntity
 	if( iLocalMove == LOCALMOVE_VALID )
 	{
 		// monster can walk straight there!
+		//ALERT( at_console, "^2TRUE\n" );
+
 		return TRUE;
 	}
 
 	// try to triangulate around any obstacles.
 	else if( iLocalMove != LOCALMOVE_INVALID_DONT_TRIANGULATE && FTriangulate( pev->origin, vecGoal, flDist, pTarget, &vecApex ) )
 	{
+		//ALERT( at_console, "^2TRUE 1\n" );
+
 		// there is a slightly more complicated path that allows the monster to reach vecGoal
 		m_Route[0].vecLocation = vecApex;
 		m_Route[0].iType = (iMoveFlag | bits_MF_TO_DETOUR);
@@ -1570,11 +1575,14 @@ BOOL CBaseMonster::BuildRoute( const Vector &vecGoal, int iMoveFlag, CBaseEntity
 	// last ditch, try nodes
 	if( FGetNodeRoute( vecGoal ) )
 	{
+		//ALERT( at_console, "^2TRUE 2\n" );
 		//ALERT( at_console, "Can get there on nodes\n" );
 		m_vecMoveGoal = vecGoal;
 		RouteSimplify( pTarget );
 		return TRUE;
 	}
+		
+	//ALERT( at_console, "^1BuildRoute failed\n" );
 
 	// b0rk
 	return FALSE;
@@ -2176,23 +2184,22 @@ int CBaseMonster::TaskIsRunning( void )
 //=========================================================
 int CBaseMonster::IRelationship( CBaseEntity *pTarget )
 {
-	static int iEnemy[15][15] =
-	{			 //   NONE	 MACH	 PLYR	 HPASS	 HMIL	 AMIL	 APASS	 AMONST	APREY	 APRED	 INSECT	PLRALY	PBWPN	ABWPN	XPED
-	/*NONE*/		{ R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO,	R_NO,	R_NO,	R_NO},
-	/*MACHINE*/		{ R_NO	,R_NO	,R_DL	,R_DL	,R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_DL,	R_DL,	R_DL,	R_DL},
-	/*PLAYER*/		{ R_NO	,R_DL	,R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO,	R_DL,	R_DL,	R_DL},
-	/*HUMANPASSIVE*/{ R_NO	,R_NO	,R_AL	,R_AL	,R_HT	,R_FR	,R_NO	,R_HT	,R_DL	,R_FR	,R_NO	,R_AL,	R_NO,	R_NO,	R_DL},
-	/*HUMANMILITAR*/{ R_NO	,R_NO	,R_HT	,R_DL	,R_NO	,R_HT	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_HT,	R_NO,	R_NO,	R_HT},
-	/*ALIENMILITAR*/{ R_NO	,R_DL	,R_HT	,R_DL	,R_HT	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_DL,	R_NO,	R_NO,	R_NO},
-	/*ALIENPASSIVE*/{ R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO,	R_NO,	R_NO,	R_NO},
-	/*ALIENMONSTER*/{ R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_DL,	R_NO,	R_NO,	R_NO},
-	/*ALIENPREY   */{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO	,R_NO	,R_NO	,R_FR	,R_NO	,R_DL,	R_NO,	R_NO,	R_FR},
-	/*ALIENPREDATO*/{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO	,R_NO	,R_HT	,R_DL	,R_NO	,R_DL,	R_NO,	R_NO,	R_DL},
-	/*INSECT*/		{ R_FR	,R_FR	,R_FR	,R_FR	,R_FR	,R_NO	,R_FR	,R_FR	,R_FR	,R_FR	,R_NO	,R_FR,	R_NO,	R_NO,	R_NO},
-	/*PLAYERALLY*/	{ R_NO	,R_DL	,R_AL	,R_AL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO,	R_NO,	R_NO,	R_DL},
-	/*PBIOWEAPON*/	{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_DL,	R_NO,	R_DL,	R_DL},
-	/*ABIOWEAPON*/	{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_AL	,R_NO	,R_DL	,R_DL	,R_NO	,R_NO	,R_DL,	R_DL,	R_NO,	R_DL},
-	/*XPREDATOR*/	{ R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO	,R_NO	,R_DL	,R_DL	,R_NO	,R_NO,	R_NO,	R_AL,	R_AL}
+	static int iEnemy[14][14] =
+	{			 //   NONE	 MACH	 PLYR	 HPASS	 HMIL	 AMIL	 APASS	 AMONST	APREY	 APRED	 INSECT	PLRALY	PBWPN	ABWPN
+	/*NONE*/		{ R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO,	R_NO,	R_NO	},
+	/*MACHINE*/		{ R_NO	,R_NO	,R_DL	,R_DL	,R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_DL,	R_DL,	R_DL	},
+	/*PLAYER*/		{ R_NO	,R_DL	,R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO,	R_DL,	R_DL	},
+	/*HUMANPASSIVE*/{ R_NO	,R_NO	,R_AL	,R_AL	,R_HT	,R_FR	,R_NO	,R_HT	,R_DL	,R_FR	,R_NO	,R_AL,	R_NO,	R_NO	},
+	/*HUMANMILITAR*/{ R_NO	,R_NO	,R_HT	,R_DL	,R_NO	,R_HT	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_HT,	R_NO,	R_NO	},
+	/*ALIENMILITAR*/{ R_NO	,R_DL	,R_HT	,R_DL	,R_HT	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_DL,	R_NO,	R_NO	},
+	/*ALIENPASSIVE*/{ R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO,	R_NO,	R_NO	},
+	/*ALIENMONSTER*/{ R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_DL,	R_NO,	R_NO	},
+	/*ALIENPREY   */{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO	,R_NO	,R_NO	,R_FR	,R_NO	,R_DL,	R_NO,	R_NO	},
+	/*ALIENPREDATO*/{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO	,R_NO	,R_HT	,R_DL	,R_NO	,R_DL,	R_NO,	R_NO	},
+	/*INSECT*/		{ R_FR	,R_FR	,R_FR	,R_FR	,R_FR	,R_NO	,R_FR	,R_FR	,R_FR	,R_FR	,R_NO	,R_FR,	R_NO,	R_NO	},
+	/*PLAYERALLY*/	{ R_NO	,R_DL	,R_AL	,R_AL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO,	R_NO,	R_NO	},
+	/*PBIOWEAPON*/	{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_DL,	R_NO,	R_DL	},
+	/*ABIOWEAPON*/	{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_AL	,R_NO	,R_DL	,R_DL	,R_NO	,R_NO	,R_DL,	R_DL,	R_NO	}
 	};
 
 	return iEnemy[Classify()][pTarget->Classify()];
@@ -2284,7 +2291,7 @@ BOOL CBaseMonster::FindCover( Vector vecThreat, Vector vecViewOffset, float flMi
 				{
 					if( FValidateCover( node.m_vecOrigin ) && MoveToLocation( ACT_RUN, 0, node.m_vecOrigin ) )
 					{
-						/*
+/*
 						MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 							WRITE_BYTE( TE_SHOWLINE );
 
@@ -2296,8 +2303,7 @@ BOOL CBaseMonster::FindCover( Vector vecThreat, Vector vecViewOffset, float flMi
 							WRITE_COORD( vecLookersOffset.y );
 							WRITE_COORD( vecLookersOffset.z );
 						MESSAGE_END();
-						*/
-
+*/
 						return TRUE;
 					}
 				}
@@ -2891,6 +2897,7 @@ void CBaseMonster::ReportAIState( void )
 	}
 
 	CSquadMonster *pSquadMonster = MySquadMonsterPointer();
+CRCAllyMonster *pTalkSquadMonster = MyTalkSquadMonsterPointer();
 
 	if( pSquadMonster )
 	{
@@ -2907,6 +2914,24 @@ void CBaseMonster::ReportAIState( void )
 		}
 
 		ALERT( level, "Leader." );
+	}
+
+	if ( pTalkSquadMonster )
+	{
+		if ( !pTalkSquadMonster->InSquad() )
+		{
+			ALERT ( level, "not " );
+		}
+
+		ALERT ( level, "In Squad, " );
+
+		if ( !pTalkSquadMonster->IsLeader() )
+		{
+			ALERT ( level, "not " );
+		}
+
+		ALERT ( level, "Leader." );
+		ALERT( at_console, "Heal target is %s\n", pTalkSquadMonster->m_hHealTarget );
 	}
 
 	ALERT( level, "\n" );
@@ -3392,44 +3417,41 @@ BOOL CBaseMonster::ShouldFadeOnDeath( void )
 
 void CBaseMonster::GlowShellOn( Vector color, float flDuration )
 {
-	if (!m_glowShellUpdate)
-	{
-		m_prevRenderMode = pev->rendermode;
-		m_prevRenderColor = pev->rendercolor;
-		m_prevRenderAmt = pev->renderamt;
-		m_prevRenderFx = pev->renderfx;
+	m_prevRenderMode = pev->rendermode;
+	m_prevRenderColor = pev->rendercolor;
+	m_prevRenderAmt = pev->renderamt;
+	m_prevRenderFx = pev->renderfx;
 
-		pev->renderamt = 5;
-		pev->rendercolor = color;
-		pev->renderfx = kRenderFxGlowShell;
-		//pev->rendermode = kRenderGlow;
+	pev->renderamt = 5;
+	pev->rendercolor = color;
+	pev->renderfx = kRenderFxGlowShell;
+	//pev->rendermode = kRenderGlow;
 
-		m_glowShellColor = color;
+	m_glowShellColor = color;
 
-		m_glowShellUpdate = TRUE;
-	}
-	m_glowShellTime = gpGlobals->time + flDuration;
+	m_glowShellDuration = flDuration;
+	m_glowShellStartTime = gpGlobals->time;
+
+	m_glowShellUpdate = TRUE;
 }
 
 void CBaseMonster::GlowShellOff( void )
 {
-	if (m_glowShellUpdate)
-	{
-		pev->renderamt = m_prevRenderAmt;
-		pev->rendercolor = m_prevRenderColor;
-		pev->renderfx = m_prevRenderFx;
-		pev->rendermode = m_prevRenderMode;
+	pev->renderamt = m_prevRenderAmt;
+	pev->rendercolor = m_prevRenderColor;
+	pev->renderfx = m_prevRenderFx;
+	pev->rendermode = m_prevRenderMode;
 
-		m_glowShellTime = 0.0f;
+	m_glowShellDuration = 0.0f;
+	m_glowShellStartTime = 0.0f;
 
-		m_glowShellUpdate = FALSE;
-	}
+	m_glowShellUpdate = FALSE;
 }
 void CBaseMonster::GlowShellUpdate( void )
 {
 	if( m_glowShellUpdate )
 	{
-		if( gpGlobals->time > m_glowShellTime )
+		if( ( gpGlobals->time - m_glowShellStartTime ) > m_glowShellDuration )
 			GlowShellOff();
 	}
 }

@@ -100,6 +100,7 @@ LOCAL_SRC_FILES := agrunt.cpp airtank.cpp \
            rat.cpp \
            roach.cpp \
            rpg.cpp \
+           rcallymonster.cpp \
            satchel.cpp \
            schedule.cpp \
            scientist.cpp \
