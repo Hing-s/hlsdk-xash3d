@@ -29,7 +29,6 @@ public:
 	void Spawn();
 	void KeyValue( KeyValueData* pkvd );
 	float GetDelay( void ) { return m_flWait; }
-	void FireThink( void );
 	//void EXPORT TriggerTouch( CBaseEntity *pOther );
 	virtual int Save( CSave &save );
 	virtual int Restore( CRestore &restore );
@@ -66,19 +65,8 @@ void CPathCorner::KeyValue( KeyValueData *pkvd )
 
 void CPathCorner::Spawn()
 {	
-	SetThink( &CPathCorner::FireThink);
 	pev->nextthink = gpGlobals->time + 106;
 	ASSERTSZ( !FStringNull( pev->targetname ), "path_corner without a targetname" );
-}
-
-void CPathCorner::FireThink( void )
-{
-	const char *blow = "osprey_blow";
-	if(STRING(pev->message) )		
-	{
-		FireTargets(blow,this, this, USE_TOGGLE, 0);
-	}
-	SetThink(NULL);
 }
 
 /*void CPathCorner::TriggerTouch( CBaseEntity *pOther )
