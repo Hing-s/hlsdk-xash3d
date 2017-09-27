@@ -16,7 +16,7 @@
 #define PLAYER_H
 
 #include "pm_materials.h"
-
+#include "ropes.h"
 #define PLAYER_FATAL_FALL_SPEED		1024// approx 60 feet
 #define PLAYER_MAX_SAFE_FALL_SPEED	580// approx 20 feet
 #define DAMAGE_FOR_FALL_SPEED		(float) 100 / ( PLAYER_FATAL_FALL_SPEED - PLAYER_MAX_SAFE_FALL_SPEED )// damage per unit per second.
@@ -35,7 +35,7 @@
 #define PFLAG_OBSERVER		( 1<<5 )		// player is locked in stationary cam mode. Spectators can move, observers can't.
 #define	PFLAG_LATCHING		( 1<<6 )	// Player is latching to a target
 #define	PFLAG_ATTACHED		( 1<<7 )	// Player is attached by a barnacle tongue tip
-
+#define PFLAG_ONROPE		( 1<<8 )
 //
 // generic player
 //
@@ -356,6 +356,22 @@ public:
 	bool	m_bHook_Out;
 	bool    m_bOn_Hook;
 	CBaseEntity *m_ppHook;
+	CRope *m_pRope;
+	bool m_bIsClimbing;
+	float m_flLastClimbTime;
+	void *SetRope( CBaseEntity *pRope )
+	{
+		m_pRope = (CRope*)pRope;
+	}
+	void SetOnRopeState( bool onRope )
+	{
+	  if( onRope )
+		m_afPhysicsFlags |= PFLAG_ONROPE;
+	  else
+		m_afPhysicsFlags &= ~PFLAG_ONROPE;
+
+	}
+
 
 	void Service_Grapple( void );
 };
