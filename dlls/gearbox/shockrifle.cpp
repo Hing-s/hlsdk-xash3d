@@ -144,9 +144,34 @@ void CShockrifle::PrimaryAttack()
 		return;
 	}
 
+<<<<<<< HEAD
 	Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
 	UTIL_MakeVectors( anglesAim );
 	Vector vecSrc	 = m_pPlayer->GetGunPosition( )+ gpGlobals->v_forward * 12 + gpGlobals->v_right * 8 + gpGlobals->v_up * -8;
+=======
+	if (m_pPlayer->pev->waterlevel == 3)
+	{
+#ifndef CLIENT_DLL
+		RadiusDamage(m_pPlayer->pev->origin, m_pPlayer->pev, m_pPlayer->pev, 300, 144, CLASS_NONE, DMG_SHOCK | DMG_ALWAYSGIB );
+#endif
+		return;
+	}
+
+#ifndef CLIENT_DLL
+	Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
+	anglesAim.x		= -anglesAim.x;
+	UTIL_MakeVectors(m_pPlayer->pev->v_angle);
+
+	Vector vecSrc;
+
+	vecSrc = m_pPlayer->GetGunPosition();
+	vecSrc = vecSrc + gpGlobals->v_forward * 8;
+	vecSrc = vecSrc + gpGlobals->v_right * 8;
+	vecSrc = vecSrc + gpGlobals->v_up * -12;
+
+	CBaseEntity *pShock = CBaseEntity::Create("shock_beam", vecSrc, anglesAim, m_pPlayer->edict());
+	pShock->pev->velocity = gpGlobals->v_forward * 2000;
+>>>>>>> cd0e284... Fix shock effect (#9)
 
 #ifndef CLIENT_DLL
 	Vector vecVel = gpGlobals->v_forward * 2000;

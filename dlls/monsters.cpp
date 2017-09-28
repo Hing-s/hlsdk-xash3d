@@ -529,9 +529,8 @@ void CBaseMonster::MonsterThink( void )
 {
 	pev->nextthink = gpGlobals->time + 0.1;// keep monster thinking.
 
-	GlowShellUpdate();
-
 	RunAI();
+	GlowShellUpdate();
 
 	float flInterval = StudioFrameAdvance( ); // animate
 
@@ -3451,7 +3450,11 @@ void CBaseMonster::GlowShellUpdate( void )
 {
 	if( m_glowShellUpdate )
 	{
+<<<<<<< HEAD
 		if( ( gpGlobals->time - m_glowShellStartTime ) > m_glowShellDuration )
+=======
+		if( gpGlobals->time > m_glowShellTime || pev->deadflag == DEAD_DEAD )
+>>>>>>> cd0e284... Fix shock effect (#9)
 			GlowShellOff();
 	}
 }
