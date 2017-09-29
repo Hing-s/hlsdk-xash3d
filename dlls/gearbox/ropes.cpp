@@ -631,7 +631,7 @@ void TruncateEpsilon( Vector& vec )
 {
 	Vector vec1 =  vec * 10.0;
 	vec1.x += 0.5;
-	vec = vec1;
+	vec = vec1 / 10;
 }
 
 void CRope::TraceModels( CRopeSegment** ppPrimarySegs, CRopeSegment** ppHiddenSegs )

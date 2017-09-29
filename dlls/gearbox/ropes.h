@@ -413,7 +413,7 @@ public:
 
 	static CRopeSample* CreateSample();
 
-	const RopeSampleData& GetData() const { return data; }
+	const RopeSampleData* GetData() const { return &data; }
 
 	RopeSampleData* GetData() { return &data; }
 
