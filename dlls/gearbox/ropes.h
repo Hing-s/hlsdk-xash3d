@@ -20,17 +20,7 @@ class CRopeSample;
 
 struct RopeSampleData;
 
-/**
-*	Represents a spring that keeps samples a given distance apart.
-*/
-struct Spring
-{
-	size_t p1;
-	size_t p2;
-	float restLength;
-	float hookConstant;
-	float springDampning;
-};
+struct Spring;
 
 #define MAX_SEGMENTS 63
 #define MAX_SAMPLES  64
@@ -316,118 +306,5 @@ private:
 
 	bool m_bMakeSound;
 };
-
-class CRopeSegment : public CBaseAnimating
-{
-public:
-
-	void Precache();
-
-	void Spawn();
-
-	void Think();
-
-	void Touch( CBaseEntity* pOther );
-
-	static CRopeSegment* CreateSegment( CRopeSample* pSample, string_t iszModelName );
-
-	CRopeSample* GetSample() { return m_Sample; }
-
-	/**
-	*	Applies external force to the segment.
-	*	@param vecForce Force.
-	*/
-	void ApplyExternalForce( const Vector& vecForce );
-
-	/**
-	*	Resets the mass to the default value.
-	*/
-	void SetMassToDefault();
-
-	/**
-	*	Sets the default mass.
-	*	@param flDefaultMass Mass.
-	*/
-	void SetDefaultMass( const float flDefaultMass );
-
-	/**
-	*	Sets the mass.
-	*	@param flMass Mass.
-	*/
-	void SetMass( const float flMass );
-
-	/**
-	*	Sets whether the segment should cause damage on touch.
-	*	@param bCauseDamage Whether to cause damage.
-	*/
-	void SetCauseDamageOnTouch( const bool bCauseDamage );
-
-	/**
-	*	Sets whether the segment can be grabbed.
-	*	@param bCanBeGrabbed Whether the segment can be grabbed.
-	*/
-	void SetCanBeGrabbed( const bool bCanBeGrabbed );
-
-	virtual int		Save( CSave &save );
-	virtual int		Restore( CRestore &restore );
-	static	TYPEDESCRIPTION m_SaveData[];
-
-
-private:
-	CRopeSample* m_Sample;
-	string_t mModelName;
-	float mDefaultMass;
-	bool mCauseDamage;
-	bool mCanBeGrabbed;
-};
-
-class CRope;
-
-/**
-*	Data for a single rope joint.
-*/
-struct RopeSampleData
-{
-	Vector mPosition;
-	Vector mVelocity;
-	Vector mForce;
-	Vector mExternalForce;
-
-	bool mApplyExternalForce;
-
-	float mMassReciprocal;
-};
-
-/**
-*	Represents a single joint in a rope. There are numSegments + 1 samples in a rope.
-*/
-class CRopeSample : public CBaseEntity
-{
-public:
-
-	void Spawn();
-	virtual int		Save( CSave &save );
-	virtual int		Restore( CRestore &restore );
-	static	TYPEDESCRIPTION m_SaveData[];
-
-
-	static CRopeSample* CreateSample();
-
-	const RopeSampleData* GetData() const { return &data; }
-
-	RopeSampleData* GetData() { return &data; }
-
-	CRope* GetMasterRope() { return mMasterRope; }
-
-	void SetMasterRope( CRope* pRope )
-	{
-		mMasterRope = pRope;
-	}
-
-private:
-	RopeSampleData data;
-	CRope* mMasterRope;
-};
-
 
 #endif //ROPES_H
