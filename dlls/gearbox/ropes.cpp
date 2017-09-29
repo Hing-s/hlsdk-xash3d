@@ -264,12 +264,16 @@ void CRope::KeyValue( KeyValueData* pkvd )
 		CBaseDelay::KeyValue( pkvd );
 }
 
+CRope::CRope()
+{
+	mBodyModel = MAKE_STRING( "models/rope16.mdl" );
+	mEndingModel = MAKE_STRING( "models/rope16.mdl" );
+
+}
+
 void CRope::Precache()
 {
 	CBaseDelay::Precache();
-
-	mBodyModel = MAKE_STRING( "models/rope16.mdl" );
-	mEndingModel = MAKE_STRING( "models/rope16.mdl" );
 
 	UTIL_PrecacheOther( "rope_segment" );
 	UTIL_PrecacheOther( "rope_sample" );
@@ -1317,7 +1321,8 @@ LINK_ENTITY_TO_CLASS( rope_segment, CRopeSegment );
 void CRopeSegment::Precache()
 {
 	CBaseAnimating::Precache();
-	mModelName = MAKE_STRING( "models/rope16.mdl" );
+	if( !mModelName )
+		mModelName = MAKE_STRING( "models/rope16.mdl" );
 
 	PRECACHE_MODEL( (char*)STRING( mModelName ) );
 	PRECACHE_SOUND( "items/grab_rope.wav" );
@@ -1463,19 +1468,20 @@ void CRopeSegment::SetCanBeGrabbed( const bool bCanBeGrabbed )
 class CElectrifiedWire : public CRope
 {
 public:
+	CElectrifiedWire();
 	virtual int		Save( CSave &save );
 	virtual int		Restore( CRestore &restore );
 	static	TYPEDESCRIPTION m_SaveData[];
 
-	void KeyValue( KeyValueData* pkvd ) override;
+	void KeyValue( KeyValueData* pkvd );
 
-	void Precache() override;
+	void Precache();
 
-	void Spawn() override;
+	void Spawn();
 
-	void Think() override;
+	void Think();
 
-	void Use( CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float flValue ) override;
+	void Use( CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float flValue );
 
 	/**
 	*	@return Whether the wire is active.
@@ -1516,6 +1522,18 @@ private:
 
 	float m_flLastSparkTime;
 };
+
+CElectrifiedWire::CElectrifiedWire()
+{
+	m_bIsActive = true;
+	m_iTipSparkFrequency = 3;
+	m_iBodySparkFrequency = 100;
+	m_iLightningFrequency = 150;
+	m_iXJoltForce = 0;
+	m_iYJoltForce = 0;
+	m_iZJoltForce = 0;
+	m_uiNumUninsulatedSegments = 0;
+}
 
 
 TYPEDESCRIPTION CElectrifiedWire::m_SaveData[] =
@@ -1586,15 +1604,6 @@ void CElectrifiedWire::KeyValue( KeyValueData* pkvd )
 
 void CElectrifiedWire::Precache()
 {
-	m_bIsActive = true;
-	m_iTipSparkFrequency = 3;
-	m_iBodySparkFrequency = 100;
-	m_iLightningFrequency = 150;
-	m_iXJoltForce = 0;
-	m_iYJoltForce = 0;
-	m_iZJoltForce = 0;
-	m_uiNumUninsulatedSegments = 0;
-
 	CRope::Precache();
 
 	m_iLightningSprite = PRECACHE_MODEL( "sprites/lgtning.spr" );
@@ -1603,6 +1612,7 @@ void CElectrifiedWire::Precache()
 void CElectrifiedWire::Spawn()
 {
 	CRope::Spawn();
+	pev->classname = MAKE_STRING( "env_electrified_wire" );
 
 	m_uiNumUninsulatedSegments = 0;
 	m_bIsActive = true;

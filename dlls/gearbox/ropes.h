@@ -33,11 +33,12 @@ struct Spring;
 class CRope : public CBaseDelay
 {
 public:
-	void KeyValue( KeyValueData* pkvd );
+	CRope();
+	virtual void KeyValue( KeyValueData* pkvd );
 
-	void Precache();
+	virtual void Precache();
 
-	void Spawn();
+	virtual void Spawn();
 
 	void Think();
 
