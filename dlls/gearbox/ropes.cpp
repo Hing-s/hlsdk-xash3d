@@ -169,8 +169,8 @@ static const char* const g_pszCreakSounds[] =
 
 TYPEDESCRIPTION	CRope::m_SaveData[] =
 {	DEFINE_FIELD( CRope, m_iSegments, FIELD_INTEGER ),
-	DEFINE_FIELD( CRope, m_bToggle, FIELD_BOOLEAN ),
-	DEFINE_FIELD( CRope, m_InitialDeltaTime, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CRope, m_bToggle, FIELD_CHARACTER ),
+	DEFINE_FIELD( CRope, m_InitialDeltaTime, FIELD_CHARACTER ),
 	DEFINE_FIELD( CRope, mLastTime, FIELD_TIME ),
 	DEFINE_FIELD( CRope, m_LastEndPos, FIELD_POSITION_VECTOR ),
 	DEFINE_FIELD( CRope, m_Gravity, FIELD_VECTOR ),
@@ -178,7 +178,7 @@ TYPEDESCRIPTION	CRope::m_SaveData[] =
 	DEFINE_FIELD( CRope, m_SpringDampning, FIELD_FLOAT ),
 	DEFINE_FIELD( CRope, m_NumSamples, FIELD_INTEGER ),
 	DEFINE_FIELD( CRope, m_SpringCnt, FIELD_INTEGER ),
-	DEFINE_FIELD( CRope, mObjectAttached, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CRope, mObjectAttached, FIELD_CHARACTER ),
 	DEFINE_FIELD( CRope, mAttachedObjectsSegment, FIELD_INTEGER ),
 	DEFINE_FIELD( CRope, detachTime, FIELD_TIME ),
 	DEFINE_ARRAY( CRope, seg, FIELD_CLASSPTR, MAX_SEGMENTS ),
@@ -189,10 +189,35 @@ TYPEDESCRIPTION	CRope::m_SaveData[] =
 	DEFINE_FIELD( CRope, mBodyModel, FIELD_STRING ),
 	DEFINE_FIELD( CRope, mEndingModel, FIELD_STRING ),
 	DEFINE_FIELD( CRope, mAttachedObjectsOffset, FIELD_FLOAT ),
-	DEFINE_FIELD( CRope, m_bMakeSound, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CRope, m_bMakeSound, FIELD_CHARACTER ),
 };
 
-IMPLEMENT_SAVERESTORE( CRope, CBaseDelay )
+int CRope::Save( CSave &save )
+{
+	if( !CBaseDelay::Save( save ) )
+		return 0;
+	return save.WriteFields( "CBaseDelay", this, m_SaveData, ARRAYSIZE( m_SaveData ) );
+}
+
+int CRope::Restore( CRestore &restore )
+{
+	if( !CBaseDelay::Restore( restore ) )
+		return 0;
+	int status = restore.ReadFields( "CBaseDelay", this, m_SaveData, ARRAYSIZE( m_SaveData ) );
+
+	for( size_t uiIndex = 0; uiIndex < MAX_TEMP_SAMPLES; ++uiIndex )
+	{
+		delete[] m_TempSys[ uiIndex ];
+		m_TempSys[ uiIndex ] = new RopeSampleData[ m_NumSamples ];
+
+		memset( m_TempSys[ uiIndex ], 0, sizeof( RopeSampleData ) * m_NumSamples );
+	}
+	m_InitialDeltaTime = 0;
+	m_Spring = NULL;
+
+	return status;
+}
+
 
 LINK_ENTITY_TO_CLASS( env_rope, CRope )
 
@@ -1251,7 +1276,7 @@ TYPEDESCRIPTION	CRopeSample::m_SaveData[] =
 	DEFINE_FIELD( CRopeSample, data.mVelocity, FIELD_VECTOR ),
 	DEFINE_FIELD( CRopeSample, data.mForce, FIELD_VECTOR ),
 	DEFINE_FIELD( CRopeSample, data.mExternalForce, FIELD_VECTOR ),
-	DEFINE_FIELD( CRopeSample, data.mApplyExternalForce, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CRopeSample, data.mApplyExternalForce, FIELD_CHARACTER ),
 	DEFINE_FIELD( CRopeSample, data.mMassReciprocal, FIELD_FLOAT ),
 	DEFINE_FIELD( CRopeSample, mMasterRope, FIELD_CLASSPTR ),
 };
@@ -1282,8 +1307,8 @@ TYPEDESCRIPTION	CRopeSegment::m_SaveData[] =
 	DEFINE_FIELD( CRopeSegment, m_Sample, FIELD_CLASSPTR ),
 	DEFINE_FIELD( CRopeSegment, mModelName, FIELD_STRING ),
 	DEFINE_FIELD( CRopeSegment, mDefaultMass, FIELD_FLOAT ),
-	DEFINE_FIELD( CRopeSegment, mCauseDamage, FIELD_BOOLEAN ),
-	DEFINE_FIELD( CRopeSegment, mCanBeGrabbed, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CRopeSegment, mCauseDamage, FIELD_CHARACTER ),
+	DEFINE_FIELD( CRopeSegment, mCanBeGrabbed, FIELD_CHARACTER ),
 };
 IMPLEMENT_SAVERESTORE( CRopeSegment, CBaseAnimating )
 
@@ -1495,7 +1520,7 @@ private:
 
 TYPEDESCRIPTION CElectrifiedWire::m_SaveData[] =
 {
-	DEFINE_FIELD( CElectrifiedWire, m_bIsActive, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CElectrifiedWire, m_bIsActive, FIELD_CHARACTER ),
 
 	DEFINE_FIELD( CElectrifiedWire, m_iTipSparkFrequency, FIELD_INTEGER ),
 	DEFINE_FIELD( CElectrifiedWire, m_iBodySparkFrequency, FIELD_INTEGER ),
