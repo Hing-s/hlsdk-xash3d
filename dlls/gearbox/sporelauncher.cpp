@@ -71,6 +71,7 @@ void CSporelauncher::Precache(void)
 
 	PRECACHE_MODEL("sprites/bigspit.spr");
 	m_iSquidSpitSprite = PRECACHE_MODEL("sprites/tinyspit.spr");
+	UTIL_PrecacheOther("spore");
 
 	m_usSporeFire = PRECACHE_EVENT(1, "events/spore.sc");
 }
@@ -142,21 +143,17 @@ void CSporelauncher::PrimaryAttack()
 	flags = 0;
 #endif
 
-	Vector vecDir;
-	// m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
-	// player "shoot" animation
-	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
 
+	// m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
+	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
+	UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+	Vector vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -8;
 
 #ifndef CLIENT_DLL
-		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
-		Vector vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -8;
-
 		CSpore *pSpore = CSpore::CreateSporeRocket( vecSrc, m_pPlayer->pev->v_angle, m_pPlayer );
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 		pSpore->pev->velocity = pSpore->pev->velocity + gpGlobals->v_forward * 1500;
 #endif
-
 
 	PLAYBACK_EVENT_FULL(
 		flags,
@@ -165,9 +162,9 @@ void CSporelauncher::PrimaryAttack()
 		0.0, 
 		(float *)&g_vecZero, 
 		(float *)&g_vecZero, 
-		vecDir.x,
-		vecDir.y,
-		*(int*)&vecDir.z,
+		vecSrc.x,
+		vecSrc.y,
+		*(int*)&vecSrc.z,
 		m_iSquidSpitSprite, 
 		0,
 		TRUE);
@@ -224,19 +221,16 @@ void CSporelauncher::SecondaryAttack(void)
 
 	//m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
 
-	Vector vecDir;
 	// player "shoot" animation
 	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
+	UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+	Vector vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -8;
 
 #ifndef CLIENT_DLL
-		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
-		Vector vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -8;
-
 		CSpore *pSpore = CSpore::CreateSporeGrenade( vecSrc, m_pPlayer->pev->v_angle, m_pPlayer );
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 		pSpore->pev->velocity = pSpore->pev->velocity + gpGlobals->v_forward * 700;
 #endif
-
 
 	PLAYBACK_EVENT_FULL(
 		flags, 
@@ -245,9 +239,9 @@ void CSporelauncher::SecondaryAttack(void)
 		0.0, 
 		(float *)&g_vecZero,
 		(float *)&g_vecZero,
-		vecDir.x, 
-		vecDir.y,
-		*(int*)&vecDir.z,
+		vecSrc.x, 
+		vecSrc.y,
+		*(int*)&vecSrc.z,
 		m_iSquidSpitSprite,
 		0, 
 		0);

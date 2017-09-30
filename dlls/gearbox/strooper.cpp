@@ -322,9 +322,9 @@ void CStrooper::HandleAnimEvent(MonsterEvent_t *pEvent)
 	{
 		UTIL_MakeVectors(pev->angles);
 		// CGrenade::ShootTimed( pev, pev->origin + gpGlobals->v_forward * 34 + Vector (0, 0, 32), m_vecTossVelocity, 3.5 );
-		CSpore *pSpore = CSpore::CreateSporeGrenade( pev->origin + gpGlobals->v_forward * 34 + Vector (0, 0, 32), pev->angles, this );
-		UTIL_MakeVectors( pev->angles );
-		pSpore->pev->velocity = pSpore->pev->velocity + gpGlobals->v_forward * 700;
+		//CSporeGrenade::ShootTimed(pev, , m_vecTossVelocity, 3.5);
+		CSpore *pSpore = CSpore::CreateSporeGrenade( GetGunPosition(), pev->angles, this );
+		pSpore->pev->velocity = m_vecTossVelocity;
 
 		m_fThrowGrenade = FALSE;
 		m_flNextGrenadeCheck = gpGlobals->time + 6;// wait six seconds before even looking again to see if a grenade can be thrown.
@@ -363,10 +363,11 @@ void CStrooper::HandleAnimEvent(MonsterEvent_t *pEvent)
 		{
 			vecGunAngles = (m_vecEnemyLKP - vecGunPos).Normalize();
 		}
-		Vector vecVel = gpGlobals->v_forward * 2000;
 
-		CBaseEntity *pShock = CBaseEntity::Create("shock_beam", vecGunPos, UTIL_VecToAngles( vecVel ), edict());
-		pShock->pev->velocity = vecVel;
+		CBaseEntity *pShock = CBaseEntity::Create("shock_beam", vecGunPos, pev->angles, edict());
+		vecGunAngles.z += RANDOM_FLOAT( -0.05, 0 );
+		pShock->pev->velocity = vecGunAngles * 2000;
+		pShock->pev->nextthink = gpGlobals->time;
 
 		// Play fire sound.
 		EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/shock_fire.wav", 1, ATTN_NORM);

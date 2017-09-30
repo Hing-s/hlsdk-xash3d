@@ -15,10 +15,8 @@
 
 #ifndef SPORE_GRENADE_H
 #define SPORE_GRENADE_H
-//=================================
-// Opposing Forces spore ammo plant 
-// Copyright Demiurge, Copyright Highlander
-//=================================
+
+
 class CSpore : public CBaseMonster
 {
 public:
@@ -27,7 +25,7 @@ public:
 	void Glow( void );
 	void Explode( void );
 	void BounceSound( void );
-	void EXPORT ExplodeThink( CBaseEntity *pOther );
+	void EXPORT ExplodeTouch( CBaseEntity *pOther );
 	void EXPORT BounceThink( CBaseEntity *pOther );
 	void EXPORT FlyThink( void );
 	static CSpore *CreateSporeRocket( Vector vecOrigin, Vector vecAngles, CBaseEntity *pOwner );
@@ -41,4 +39,5 @@ public:
 
 	CSprite *m_pSprite;
 };
+
 #endif // SPORE_GRENADE_H

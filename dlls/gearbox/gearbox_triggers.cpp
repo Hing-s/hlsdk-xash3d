@@ -167,39 +167,30 @@ class CBlowerCannon : public CBaseEntity
 {
 public:
 	void Spawn( void );
-	//void Precache( void );
+	void Precache( void );
 	void KeyValue(KeyValueData* pkvd);
-	void Fire( void );
+	void EXPORT BlowerCannonThink( void );
+	void EXPORT BlowerCannonStart( void );
+	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
-	virtual Vector UpdateTargetPosition(CBaseEntity *pTarget)
-	{
-		return pTarget->BodyTarget(pev->origin);
-	}
+	virtual int Save(CSave &save);
+	virtual int Restore(CRestore &restore);
 
-	void EXPORT Touch( CBaseEntity *pOther );
-	void EXPORT ToggleUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+	static TYPEDESCRIPTION m_SaveData[];
 
-	virtual int		Save(CSave &save);
-	virtual int		Restore(CRestore &restore);
-
-	static	TYPEDESCRIPTION m_SaveData[];
-
-	int WeaponType;
-	float Delay;
-	int FireType;
-	int test;
-	Vector m_sightOrigin;
-
+	int m_iWeapType;
+	float m_flDelay;
+	int m_iFireType;
+	int m_iZOffSet;
 };
 LINK_ENTITY_TO_CLASS(env_blowercannon, CBlowerCannon);
 
 TYPEDESCRIPTION	CBlowerCannon::m_SaveData[] =
 {
-	DEFINE_FIELD(CBlowerCannon, FireType, FIELD_INTEGER),
-	DEFINE_FIELD(CBlowerCannon, test, FIELD_INTEGER),
-	DEFINE_FIELD(CBlowerCannon, WeaponType, FIELD_INTEGER),
-	DEFINE_FIELD(CBlowerCannon, Delay, FIELD_FLOAT),
-	DEFINE_FIELD(CBlowerCannon, m_sightOrigin, FIELD_VECTOR),
+	DEFINE_FIELD(CBlowerCannon, m_iFireType, FIELD_INTEGER),
+	DEFINE_FIELD(CBlowerCannon, m_iWeapType, FIELD_INTEGER),
+	DEFINE_FIELD(CBlowerCannon, m_iZOffSet, FIELD_INTEGER),
+	DEFINE_FIELD(CBlowerCannon, m_flDelay, FIELD_FLOAT),
 };
 IMPLEMENT_SAVERESTORE( CBlowerCannon, CBaseEntity )
 
@@ -208,92 +199,92 @@ void CBlowerCannon::KeyValue(KeyValueData *pkvd)
 {
 	if (FStrEq(pkvd->szKeyName, "firetype"))
 	{
-		FireType = (int)atoi(pkvd->szValue);
+		m_iFireType = (int)atoi(pkvd->szValue);
 		pkvd->fHandled = TRUE;
 	}
 	else if (FStrEq(pkvd->szKeyName, "delay"))
 	{
-		Delay = (float)atof(pkvd->szValue);
+		m_flDelay = (float)atof(pkvd->szValue);
 		pkvd->fHandled = TRUE;
 	}
 	else if (FStrEq(pkvd->szKeyName, "weaptype"))
 	{
-		WeaponType = (int)atoi(pkvd->szValue);
+		m_iWeapType = (int)atoi(pkvd->szValue);
+		pkvd->fHandled = TRUE;
+	}
+	else if (FStrEq(pkvd->szKeyName, "zoffset"))
+	{
+		m_iZOffSet = (int)atoi(pkvd->szValue);
 		pkvd->fHandled = TRUE;
 	}
 	else
-		CBaseEntity::KeyValue(pkvd);
+		pkvd->fHandled = FALSE;
 }
 
 void CBlowerCannon::Spawn(void)
 {
-	pev->movetype = MOVETYPE_NONE;
-	pev->classname = MAKE_STRING("env_blowercannon");
+	Precache();
+	UTIL_SetSize( pev, Vector(-16, -16, -16), Vector( 16, 16, 16 ) );
 	pev->solid = SOLID_TRIGGER;
-	test = 1;
-	UTIL_SetSize(pev, Vector(-16, -16, -16), Vector(16, 16, 16));
-
-	if( FireType == 1)
-		SetUse( &CBlowerCannon::ToggleUse );
-	else if( FireType == 2)
-		SetTouch( &CBlowerCannon::Touch );
+	SetUse( &CBlowerCannon::Use );
 }
 
-void CBlowerCannon::ToggleUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+void CBlowerCannon::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
-	//ALERT(at_console, "In USE!\n");
-	SetThink( &CBlowerCannon::Fire );
-	pev->nextthink = gpGlobals->time + Delay;
+	SetThink( &CBlowerCannon::BlowerCannonStart );
+	pev->nextthink = gpGlobals->time + 0.1;
 }
 
-void CBlowerCannon::Touch( CBaseEntity *pOther)
+void CBlowerCannon::Precache( void )
 {
-	//ALERT(at_console, "TOUCH!\n");
-	SetThink( &CBlowerCannon::Fire );
-	pev->nextthink = gpGlobals->time + Delay;
+	UTIL_PrecacheOther( "shock_beam" );
+	UTIL_PrecacheOther( "displacer_ball" );
+	UTIL_PrecacheOther( "monster_spore" );
 }
 
-void CBlowerCannon::Fire( void )
+void CBlowerCannon::BlowerCannonThink( void )
 {
 	//ALERT(at_console, "thinking!\n");
 
-	edict_t *pTarget = FIND_ENTITY_BY_TARGETNAME( pTarget, STRING( pev->target ) );
+	CBaseEntity *pTarget = GetNextTarget();
+	Vector angles, direction;
 
-	CBaseEntity *pInstance = CBaseEntity::Instance(pTarget);
-
-
-	if( pInstance && pInstance->IsAlive() )
+	if( pTarget && pTarget->IsAlive() )
 	{
-		m_sightOrigin = UpdateTargetPosition( pInstance );
+		direction = pTarget->pev->origin - pev->origin;
+		direction.z = m_iZOffSet + pTarget->pev->origin.z - pev->origin.z;
 
-		Vector direction = m_sightOrigin - pev->origin;
-		//direction = m_sightOrigin - barrelEnd;
 		Vector angles = UTIL_VecToAngles( direction );
 		UTIL_MakeVectors( angles );
 
-		if( WeaponType == 1 )//spore rocket
+		if( m_iWeapType == 1 )//spore rocket
 		{
 			CSpore *pSpore = CSpore::CreateSporeRocket( pev->origin, angles, this );
 			pSpore->pev->velocity = pSpore->pev->velocity + gpGlobals->v_forward * 1500;
 		}
-		else if( WeaponType == 2 )//spore grenade
+		else if( m_iWeapType == 2 )//spore grenade
 		{
 			CSpore *pSpore = CSpore::CreateSporeGrenade( pev->origin, angles, this );
-			pSpore->pev->velocity = pSpore->pev->velocity + gpGlobals->v_forward * 1000;
+			pSpore->pev->velocity = pSpore->pev->velocity + gpGlobals->v_forward * 700;
 		}
-		else if( WeaponType == 3 )//shock beam
+		else if( m_iWeapType == 3 )//shock beam
 		{
 			CBaseEntity *pShock = CBaseEntity::Create( "shock_beam", pev->origin, angles, this->edict() );
 			pShock->pev->velocity = gpGlobals->v_forward * 2000;
 		}
-		else if( WeaponType == 4 )//displacer ball
+		else if( m_iWeapType == 4 )//displacer ball
 		{
-			CPortal::Shoot(this->pev, pev->origin, gpGlobals->v_forward * 600, angles);
+			CPortal::Shoot(pev, pev->origin, gpGlobals->v_forward * 600);
 		}
 	}
-	if( test )
-		pev->nextthink = gpGlobals->time + 3;
-	else
-		pev->nextthink = gpGlobals->time + Delay;
-	test = 0;
+	if( m_iFireType == 2 )
+		SetThink( NULL );
+
+	pev->nextthink = gpGlobals->time + m_flDelay;
+}
+
+void CBlowerCannon::BlowerCannonStart( void )
+{
+	SetThink(&CBlowerCannon::BlowerCannonThink);
+	pev->nextthink = gpGlobals->time + m_flDelay;
 }

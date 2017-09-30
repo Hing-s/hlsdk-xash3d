@@ -82,7 +82,7 @@ void CSporeAmmo :: Spawn( void )
 	UTIL_SetSize(pev, Vector( -16, -16, -16 ), Vector( 16, 16, 16 ));
 	pev->takedamage = DAMAGE_YES;
 	pev->solid			= SOLID_SLIDEBOX;
-	pev->movetype		= MOVETYPE_FLY;
+	pev->movetype		= MOVETYPE_NONE;
 	pev->framerate		= 1.0;
 	pev->animtime		= gpGlobals->time + 0.1;
 	borntime = 1;
@@ -99,7 +99,7 @@ void CSporeAmmo :: Spawn( void )
 	SetThink (&CSporeAmmo::BornThink);
 	SetTouch (&CSporeAmmo::AmmoTouch);
 	
-	m_flTimeSporeIdle = gpGlobals->time + 22;
+	m_flTimeSporeIdle = gpGlobals->time + 20;
 	pev->nextthink = gpGlobals->time + 0.1;
 }
 	
@@ -110,9 +110,9 @@ int CSporeAmmo::TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, flo
 {
 	if (!borntime) // rigth '!borntime'  // blast in anytime 'borntime || !borntime'
 	{
-		CBaseEntity* attacker = GetClassPtr((CBaseEntity*)pevAttacker);
-
+		CBaseEntity *attacker = GetClassPtr( (CBaseEntity*)pevAttacker );
 		Vector vecSrc = pev->origin + gpGlobals->v_forward * -20;
+
 		MESSAGE_BEGIN( MSG_PAS, SVC_TEMPENTITY, pev->origin );
 			WRITE_BYTE( TE_EXPLOSION );		// This makes a dynamic light and the explosion sprites/sound
 			WRITE_COORD( vecSrc.x );	// Send to PAS because of the sound
@@ -127,15 +127,22 @@ int CSporeAmmo::TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, flo
 			
 		//ALERT( at_console, "angles %f %f %f\n", pev->angles.x, pev->angles.y, pev->angles.z );
 
-		Vector vecAngles = pev->angles + gpGlobals->v_up;
-		vecAngles.x = vecAngles.x - 90 + RANDOM_LONG( -20, 20 );
-		vecAngles.y = vecAngles.x + 180 + RANDOM_LONG( -20, 20 );
-		vecAngles.z += RANDOM_LONG( -20, 20 );
+		Vector angles = pev->angles + gpGlobals->v_up*2;
+		angles.x -= 90;
+		angles.y += 180;
+
+		Vector vecLaunchDir = angles;
+
+		vecLaunchDir.x += RANDOM_FLOAT( -20, 20 );
+		vecLaunchDir.y += RANDOM_FLOAT( -20, 20 );
+		vecLaunchDir.z += RANDOM_FLOAT( -20, 20 );
 
 		//ALERT( at_console, "angles %f %f %f\n", angles.x, angles.y, angles.z );
-
-		CSpore *pSpore = CSpore::CreateSporeGrenade( vecSrc, vecAngles, attacker );
-		pSpore->pev->velocity = pSpore->pev->velocity + gpGlobals->v_forward * 1000;
+		//CBaseEntity *pSpore = CSporeGrenade::ShootTimed(attacker->pev, vecSrc, gpGlobals->v_forward * 1000, RANDOM_FLOAT(5, 6));
+		//pSpore->pev->angles = vecLaunchDir;
+		UTIL_MakeVectors( vecLaunchDir );
+		CSpore *pSpore = CSpore::CreateSporeGrenade( vecSrc, vecLaunchDir, attacker );
+		pSpore->pev->velocity = pSpore->pev->velocity + gpGlobals->v_forward * 700;
 
 		pev->framerate		= 1.0;
 		pev->animtime		= gpGlobals->time + 0.1;
@@ -178,7 +185,7 @@ void CSporeAmmo :: IdleThink ( void )
 	{
 		pev->sequence = SPOREAMMO_IDLE;
 
-		m_flTimeSporeIdle = gpGlobals->time + 18;
+		m_flTimeSporeIdle = gpGlobals->time + 19;
 		SetThink(&CSporeAmmo::BornThink);
 		return;
 	}
@@ -193,13 +200,13 @@ void CSporeAmmo :: AmmoTouch ( CBaseEntity *pOther )
 	Vector		vecSpot;
 	TraceResult	tr;
 
-	if ( pOther->pev->velocity == g_vecZero || !pOther->IsPlayer() )
+	if ( !pOther->IsPlayer() )
 		return;
 
 	if (borntime)
 		return;
 
-	int bResult = (pOther->GiveAmmo( AMMO_SPORE_GIVE, "spore", SPORE_MAX_CARRY) != -1);
+	int bResult = (pOther->GiveAmmo( AMMO_SPORE_GIVE, "Spores", SPORE_MAX_CARRY) != -1);
 	if (bResult)
 	{
 		EMIT_SOUND(ENT(pev), CHAN_ITEM, "weapons/spore_ammo.wav", 1, ATTN_NORM);
