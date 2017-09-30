@@ -21,9 +21,154 @@
 #include "nodes.h"
 #include "player.h"
 #include "gamerules.h"
+#include "customentity.h"
+#include "grapple_tonguetip.h"
+#include <string.h>
 
 #ifndef CLIENT_DLL
-#include "grapple_tonguetip.h"
+LINK_ENTITY_TO_CLASS(grapple_tonguetip, CGrappleTonguetip);
+
+TYPEDESCRIPTION	CGrappleTonguetip::m_SaveData[] =
+{
+	DEFINE_FIELD(CGrappleTonguetip, m_pMyGrappler, FIELD_CLASSPTR),
+};
+
+IMPLEMENT_SAVERESTORE(CGrappleTonguetip, CBaseEntity);
+
+//=========================================================
+// Purpose: Spawn
+//=========================================================
+void CGrappleTonguetip::Spawn(void)
+{
+	pev->movetype = MOVETYPE_TOSS;
+	pev->classname = MAKE_STRING("grapple_tonguetip");
+	pev->solid = SOLID_BBOX;
+	pev->rendermode = kRenderTransTexture;
+	pev->renderamt = 0;
+	pev->gravity = 0.01;
+
+	SET_MODEL(ENT(pev), "models/v_bgrap_tonguetip.mdl");
+
+	UTIL_SetSize(pev, Vector(0, 0, 0), Vector(0, 0, 0));
+
+	SetTouch(&CGrappleTonguetip::TipTouch);
+}
+
+
+//=========================================================
+// Purpose: CreateTip
+//=========================================================
+CGrappleTonguetip* CGrappleTonguetip::CreateTip(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity)
+{
+	CGrappleTonguetip* pTonguetip = GetClassPtr((CGrappleTonguetip *)NULL);
+	pTonguetip->Spawn();
+
+	UTIL_SetOrigin(pTonguetip->pev, vecStart);
+	pTonguetip->pev->velocity = vecVelocity;
+	pTonguetip->pev->owner = ENT(pevOwner);
+	pTonguetip->m_pMyGrappler = GetClassPtr((CGrapple*)pevOwner);
+	pTonguetip->m_pMyGrappler->checkTarg = 0;
+
+	return pTonguetip;
+}
+
+//=========================================================
+// Purpose: HitThink
+//=========================================================
+void CGrappleTonguetip::HitThink(void)
+{
+	//ALERT(at_console, "HitT.hink\n");
+	pev->nextthink = gpGlobals->time;
+}
+
+//=========================================================
+// Purpose: TipTouch
+//=========================================================
+void CGrappleTonguetip::TipTouch(CBaseEntity *pOther)
+{
+	// Do not collide with the owner.
+	if (ENT(pOther->pev) == pev->owner || (ENT(pOther->pev) == VARS(pev->owner)->owner) || (pOther == m_pMyGrappler ))
+		return;
+//	CBaseEntity *pTouchedEnt = CBaseEntity::Instance( pOther );
+
+	TraceResult tr;
+	float rgfl1[3];
+	float rgfl2[3];
+	const char *pTextureName;
+	Vector vecSrc = pev->origin;
+	Vector vecEnd = pev->origin + pev->velocity * 10;
+
+	UTIL_TraceLine(vecSrc, vecEnd, dont_ignore_monsters, ENT(pev), &tr);
+
+	CBaseEntity *pEntity = CBaseEntity::Instance(tr.pHit);
+	vecSrc.CopyToArray(rgfl1);
+	vecEnd.CopyToArray(rgfl2);
+
+	if (pEntity)
+		pTextureName = TRACE_TEXTURE(ENT(pEntity->pev), rgfl1, rgfl2);
+	else
+		pTextureName = TRACE_TEXTURE(ENT(0), rgfl1, rgfl2);
+
+
+	int content = UTIL_PointContents(tr.vecEndPos);
+	int hitFlags = pOther->pev->flags;
+	m_pMyGrappler->m_iHitFlags	= hitFlags;
+	//float m_IsPull;
+	if(FClassnameIs( pOther->pev, "monster_barnacle"))
+		m_pMyGrappler->checkTarg = 1;
+	else if((hitFlags & (FL_CLIENT | FL_MONSTER)) || (FClassnameIs( pOther->pev, "ammo_spore")))
+	{
+		// Set player attached flag.
+		if (pOther->IsPlayer())
+			((CBasePlayer*)pOther)->m_afPhysicsFlags |= PFLAG_ATTACHED;
+
+		pev->movetype = MOVETYPE_FOLLOW;
+		pev->aiment = ENT(pOther->pev);
+		pev->velocity = pev->velocity.Normalize();
+
+		m_pMyGrappler->OnTongueTipHitEntity(pOther);
+		m_pMyGrappler->m_fTipHit	= TRUE;
+		m_pMyGrappler->checkTarg = 0;
+	/*	UTIL_SetOrigin( pev, pOther->Center());
+		pev->velocity = pOther->velocity;
+		SetThink(&CGrappleTonguetip::HitThink);
+		pev->nextthink = gpGlobals->time;*/
+	}
+	else if( pTextureName && m_pMyGrappler && (!strcmp (pTextureName, "xeno_grapple" )))
+	{
+		pev->velocity = Vector(0, 0, 0);
+		pev->movetype = MOVETYPE_NONE;
+		pev->gravity = 0.0f;
+		m_pMyGrappler->m_fTipHit	= TRUE;
+		hitFlags = 0;
+		m_pMyGrappler->OnTongueTipHitSurface(tr.vecEndPos);
+		m_pMyGrappler->checkTarg = 0;
+	}
+	else
+	{
+		m_pMyGrappler->m_fTipHit	= FALSE;
+		hitFlags = 0;
+		m_pMyGrappler->checkTarg = 1;
+	}
+
+	EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "weapons/bgrapple_impact.wav", 1, ATTN_NORM, 0, 100);
+
+	SetTouch( NULL );
+}
+
+void CGrappleTonguetip::PreRemoval(void)
+{
+	if (pev->aiment != NULL)
+	{
+		CBaseEntity* pEnt = GetClassPtr((CBaseEntity*)VARS(pev->aiment));
+		if (pEnt && pEnt->IsPlayer())
+		{
+			// Remove attached flag of the target entity.
+			((CBasePlayer*)pEnt)->m_afPhysicsFlags &= ~PFLAG_ATTACHED;
+		}
+	}
+CBaseEntity::PreRemoval();
+}
 #endif
 
 LINK_ENTITY_TO_CLASS(weapon_grapple, CGrapple);
@@ -47,6 +192,8 @@ enum bgrap_e {
 //=========================================================
 void CGrapple::Spawn()
 {
+
+	SetThink( NULL );
 	Precache();
 	m_iId = WEAPON_GRAPPLE;
 	SET_MODEL(ENT(pev), "models/w_bgrap.mdl");
@@ -85,7 +232,7 @@ void CGrapple::Precache(void)
 	PRECACHE_SOUND("weapons/bgrapple_release.wav");
 	PRECACHE_SOUND("weapons/bgrapple_wait.wav");
 
-	PRECACHE_MODEL("sprites/smoke_blk.spr");
+	PRECACHE_MODEL("sprites/tongue.spr");
 }
 
 //=========================================================
@@ -113,7 +260,8 @@ BOOL CGrapple::Deploy()
 {
 	m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.9f;
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.9f;
-
+	timer = gpGlobals->time;
+	deadflag = 0;
 	return DefaultDeploy("models/v_bgrap.mdl", "models/p_bgrap.mdl", BGRAP_UP, "bgrap");
 }
 
@@ -152,6 +300,7 @@ void CGrapple::ItemPostFrame(void)
 		m_flLastFireTime = 0.0f;
 	}
 
+
 	if (m_iFirestate != FIRESTATE_NONE)
 	{
 		if (m_fTipHit)
@@ -161,7 +310,7 @@ void CGrapple::ItemPostFrame(void)
 
 		// Check if fire is still eligible.
 		CheckFireEligibility();
-
+		CheckTargets();
 		// Check if the current tip is attached to a monster or a wall.
 		// If the tongue tip move type is MOVETYPE_FOLLOW, then it
 		// implies that we are targetting a monster, so it will kill
@@ -230,6 +379,13 @@ void CGrapple::ItemPostFrame(void)
 //=========================================================
 void CGrapple::WeaponIdle(void)
 {
+	if(deadflag == 1)
+	{
+		FireRelease();
+		deadflag = 0;
+		return;
+	}
+
 	ResetEmptySound();
 
 	if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase())
@@ -379,7 +535,6 @@ void CGrapple::FireRelease(void)
 
 	SendWeaponAnim(BGRAP_FIRERELEASE, UseDecrement());
 	m_iFirestate = FIRESTATE_NONE;
-
 	// Stop the pulling.
 	StopPull();
 
@@ -402,7 +557,7 @@ void CGrapple::FireRelease(void)
 void CGrapple::OnTongueTipHitSurface(const Vector& vecTarget)
 {
 #ifndef CLIENT_DLL
-	ALERT(at_console, "Hit surface at: (%f,%f,%f).\n", vecTarget.x, vecTarget.y, vecTarget.z);
+	//ALERT(at_console, "Hit surface at: (%f,%f,%f).\n", vecTarget.x, vecTarget.y, vecTarget.z);
 #endif
 	FireReach();
 }
@@ -413,7 +568,7 @@ void CGrapple::OnTongueTipHitSurface(const Vector& vecTarget)
 void CGrapple::OnTongueTipHitEntity(CBaseEntity* pEntity)
 {
 #ifndef CLIENT_DLL
-	ALERT(at_console, "Hit entity with classname %s.\n", (char*)STRING(pEntity->pev->classname));
+	 //ALERT(at_console, "Hit entity with classname %s.\n", (char*)STRING(pEntity->pev->classname));
 #endif
 	FireReach();
 }
@@ -456,13 +611,12 @@ void CGrapple::StopPull(void)
 void CGrapple::Pull( void )
 {
 #ifndef CLIENT_DLL
-
 	Vector vecOwnerPos, vecTipPos, vecDirToTip;
 	vecOwnerPos = m_pPlayer->pev->origin;
-	vecTipPos = m_pTongueTip->pev->origin;
+	vecTipPos = m_pTongueTip->Center();
 	vecDirToTip = (vecTipPos - vecOwnerPos).Normalize();
 
-	m_pPlayer->pev->velocity = vecDirToTip * 300;
+	m_pPlayer->pev->velocity = vecDirToTip * 550;
 
 	m_pPlayer->m_afPhysicsFlags |= PFLAG_LATCHING;
 #endif
@@ -479,15 +633,14 @@ void CGrapple::CreateTongueTip( void )
 
 	vecSrc = m_pPlayer->GetGunPosition();
 	vecSrc = vecSrc + gpGlobals->v_forward * 8;
-	vecSrc = vecSrc + gpGlobals->v_right * 8;
-	vecSrc = vecSrc + gpGlobals->v_up;
+	vecSrc = vecSrc + gpGlobals->v_right * 3;
+	vecSrc = vecSrc + gpGlobals->v_up * -3;
 
-	vecVel = gpGlobals->v_forward * 300;
+	vecVel = gpGlobals->v_forward * 1800;
 
 	//GetAttachment(0, vecSrc, vecAiming);
 
 	m_pTongueTip = CGrappleTonguetip::CreateTip(pev, vecSrc, vecVel);
-
 	CreateBeam(m_pTongueTip);
 #endif
 
@@ -500,7 +653,7 @@ void CGrapple::DestroyTongueTip(void)
 {
 #ifndef CLIENT_DLL
 	DestroyBeam();
-
+	checkTarg = 0;
 	if (m_pTongueTip)
 	{
 		UTIL_Remove(m_pTongueTip);
@@ -537,17 +690,16 @@ void CGrapple::UpdateTongueTip(void)
 void CGrapple::CreateBeam( CBaseEntity* pTongueTip )
 {
 #ifndef CLIENT_DLL
-	m_pBeam = CBeam::BeamCreate("sprites/smoke_blk.spr", 16);
+	m_pBeam = CBeam::BeamCreate("sprites/tongue.spr", 8);
 
 	if (m_pBeam)
 	{
 		m_pBeam->PointsInit(pTongueTip->pev->origin, pev->origin);
-		m_pBeam->SetColor(255, 255, 255);
-		m_pBeam->SetBrightness(255);
-		m_pBeam->SetNoise(0);
-		m_pBeam->SetFrame(0);
-		m_pBeam->pev->rendermode = kRenderNormal;
-		m_pBeam->pev->renderamt = 255;
+		m_pBeam->SetFlags( BEAM_FSOLID );
+		m_pBeam->SetBrightness( 100.0 );
+
+		m_pBeam->SetEndAttachment( 1 );
+		m_pBeam->pev->spawnflags |= SF_BEAM_TEMPORARY;
 	}
 #endif
 }
@@ -633,6 +785,16 @@ void CGrapple::ResetPullSound(void)
 	m_fPlayPullSound = FALSE;
 }
 
+void CGrapple::CheckTargets( void )
+{//If the target isn't monster or xeno_grapple
+	if( checkTarg == 1)
+	{
+		EMIT_SOUND(ENT(pev), CHAN_BODY, "weapons/bgrapple_impact.wav", 1, ATTN_NORM);
+		DestroyTongueTip();
+		Fire2();
+	}
+}
+
 BOOL CGrapple::IsTongueColliding(const Vector& vecShootOrigin, const Vector& vecTipPos)
 {
 #ifndef CLIENT_DLL
@@ -668,10 +830,11 @@ void CGrapple::CheckFireEligibility(void)
 	if (IsTongueColliding(m_pPlayer->GetGunPosition(), m_pTongueTip->pev->origin))
 	{
 		// Stop firing!
-		FireRelease();
+		//FireRelease();
 	}
 #endif
 }
+
 
 BOOL CGrapple::CheckTargetProximity(void)
 {
@@ -680,8 +843,6 @@ BOOL CGrapple::CheckTargetProximity(void)
 	if (!m_pTongueTip)
 		return FALSE;
 
-	if (m_pTongueTip->pev->movetype == MOVETYPE_FOLLOW)
-	{
 		// Trace a hull around to see if we hit something within 20 units.
 		TraceResult tr;
 		UTIL_TraceHull(
@@ -692,34 +853,32 @@ BOOL CGrapple::CheckTargetProximity(void)
 			edict(),
 			&tr);
 
-
+		CBaseEntity *pEnt = CBaseEntity::Instance( tr.pHit );
 		// Check to see if we are close enough to our target.
 		// In the case o a monster, attempt to get a pointer to
 		// the entity, gib it, release grappler fire.
 		edict_t* pHit = ENT(tr.pHit);
-		if ( pHit && 
-			(VARS(pHit)->flags & FL_MONSTER) && 
-			(m_pTongueTip->pev->aiment == tr.pHit))
+		//CBaseEntity* pEnt = GetClassPtr((CBaseEntity*)VARS(tr.pHit));
+		
+		if(m_pTongueTip->pev->aiment == tr.pHit && (pEnt->pev->flags & FL_MONSTER))
 		{
-			// Get a pointer to the entity.
-			CBaseEntity* pEnt = GetClassPtr((CBaseEntity*)VARS(tr.pHit));
-			if (pEnt)
+			if(timer <= gpGlobals->time)
 			{
-				// Since FL_MONSTER is set, it can only be a monster entity.
-				ASSERT(pEnt->MyMonsterPointer() != NULL);
+				//ALERT(at_console, "Attack\n");
+				UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+				float flDamage = gSkillData.plrDmgGrapple;
 
-				// Gib monster.
-				((CBaseMonster*)pEnt)->GibMonster();
-			}
-			else
-			{
-				ALERT(at_console, "ERROR: %s attempted to reference an unlisted monster.\n", STRING(m_pTongueTip->pev->classname));
-			}
+				if(g_pGameRules->IsMultiplayer())
+					flDamage *= 2;
 
-			// Release fire.
-			FireRelease();
+				ClearMultiDamage();
+				   pEnt->TraceAttack( m_pPlayer->pev, flDamage, gpGlobals->v_forward, &tr, DMG_CLUB | DMG_ALWAYSGIB );
+				ApplyMultiDamage( pev, m_pPlayer->pev );
+				timer = gpGlobals->time + 0.6;
+				if(!pEnt->IsAlive() && pEnt->IsMonster())
+					deadflag = 1;
+			}
 		}
-	}
 #endif
 	return FALSE;
 }

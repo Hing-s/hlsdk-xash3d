@@ -1168,7 +1168,22 @@ public:
 	int		Restore(CRestore &restore);
 	static	TYPEDESCRIPTION m_SaveData[];
 #endif
-
+enum bgrap_e {
+	BGRAP_BREATHE = 0,
+	BGRAP_LONGIDLE,
+	BGRAP_SHORTIDLE,
+	BGRAP_COUGH,
+	BGRAP_DOWN,
+	BGRAP_UP,
+	BGRAP_FIRE,
+	BGRAP_FIREWAITING,
+	BGRAP_FIREREACHED,
+	BGRAP_FIRETRAVEL,
+	BGRAP_FIRERELEASE,
+};
+	float timer;
+	bool deadflag;
+	int checkTarg;
 	void Spawn(void);
 	void Precache(void);
 	int iItemSlot(void) { return 1; }
@@ -1196,6 +1211,7 @@ public:
 	void FireReach(void);
 	void FireTravel(void);
 	void FireRelease(void);
+	void CheckTargets( void );
 
 	void Fire2(void);
 
@@ -1239,6 +1255,7 @@ public:
 	int		m_iHitFlags;
 	BOOL	m_fTipHit;
 	CGrappleTonguetip* m_pTongueTip;
+	CBaseEntity *pTouchedEnt;
 	CBeam*	m_pBeam;
 	float	m_flNextPullSoundTime;
 	BOOL	m_fPlayPullSound;
@@ -1517,7 +1534,7 @@ class CPortal : public CBaseEntity
 public:
 	void Spawn(void);
 
-	static void Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity, Vector vecAngles);
+	static void Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity);
 	static void SelfCreate(entvars_t *pevOwner, Vector vecStart);
 
 	void Touch(CBaseEntity *pOther);
