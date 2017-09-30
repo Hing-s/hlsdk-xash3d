@@ -135,20 +135,7 @@ void CShockrifle::PrimaryAttack()
 	{
 		return;
 	}
-	// Kill if fire underwater
-	if (m_pPlayer->pev->waterlevel == 3)
-	{
-		entvars_t *pevOwner = VARS( pev->owner );
-		::RadiusDamage( pev->origin, pev,pevOwner, 300, 300, CLASS_NONE, DMG_ENERGYBEAM );
-		EMIT_SOUND( ENT( pev ), CHAN_ITEM, "weapons/shock_discharge.wav", 1, ATTN_NORM );
-		return;
-	}
 
-<<<<<<< HEAD
-	Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
-	UTIL_MakeVectors( anglesAim );
-	Vector vecSrc	 = m_pPlayer->GetGunPosition( )+ gpGlobals->v_forward * 12 + gpGlobals->v_right * 8 + gpGlobals->v_up * -8;
-=======
 	if (m_pPlayer->pev->waterlevel == 3)
 	{
 #ifndef CLIENT_DLL
@@ -171,14 +158,9 @@ void CShockrifle::PrimaryAttack()
 
 	CBaseEntity *pShock = CBaseEntity::Create("shock_beam", vecSrc, anglesAim, m_pPlayer->edict());
 	pShock->pev->velocity = gpGlobals->v_forward * 2000;
->>>>>>> cd0e284... Fix shock effect (#9)
 
-#ifndef CLIENT_DLL
-	Vector vecVel = gpGlobals->v_forward * 2000;
-	CBaseEntity *pShock = CBaseEntity::Create( "shock_beam", vecSrc, UTIL_VecToAngles( vecVel ), m_pPlayer->edict() );
-	pShock->pev->velocity = vecVel;
+	m_flRechargeTime = gpGlobals->time + 0.5;
 #endif
-
 
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;
 

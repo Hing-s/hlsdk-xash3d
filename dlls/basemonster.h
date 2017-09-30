@@ -15,6 +15,7 @@
 
 #ifndef BASEMONSTER_H
 #define BASEMONSTER_H
+
 //
 // generic Monster
 //
@@ -153,7 +154,6 @@ public:
 	virtual void Move( float flInterval = 0.1 );
 	virtual void MoveExecute( CBaseEntity *pTargetEnt, const Vector &vecDir, float flInterval );
 	virtual BOOL ShouldAdvanceRoute( float flWaypointDist );
-	virtual BOOL IsMonster(){ return TRUE;}
 
 	virtual Activity GetStoppedActivity( void ) { return ACT_IDLE; }
 	virtual void Stop( void ) { m_IdealActivity = GetStoppedActivity(); }
@@ -337,8 +337,9 @@ public:
 	void GlowShellOff( void );
 	void GlowShellUpdate( void );
 
-	float m_glowShellStartTime;
+	float m_glowShellTime;
 	float m_glowShellDuration;
+	float m_glowShellStartTime;
 	Vector m_glowShellColor;
 	BOOL m_glowShellUpdate;
 

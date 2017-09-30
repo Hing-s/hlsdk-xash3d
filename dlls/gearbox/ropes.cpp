@@ -1564,37 +1564,37 @@ void CElectrifiedWire::KeyValue( KeyValueData* pkvd )
 {
 	if( FStrEq( pkvd->szKeyName, "sparkfrequency" ) )
 	{
-		m_iTipSparkFrequency = strtol( pkvd->szValue, nullptr, 10 );
+		m_iTipSparkFrequency = strtol( pkvd->szValue, NULL, 10 );
 
 		pkvd->fHandled = true;
 	}
 	else if( FStrEq( pkvd->szKeyName, "bodysparkfrequency" ) )
 	{
-		m_iBodySparkFrequency = strtol( pkvd->szValue, nullptr, 10 );
+		m_iBodySparkFrequency = strtol( pkvd->szValue, NULL, 10 );
 
 		pkvd->fHandled = true;
 	}
 	else if( FStrEq( pkvd->szKeyName, "lightningfrequency" ) )
 	{
-		m_iLightningFrequency = strtol( pkvd->szValue, nullptr, 10 );
+		m_iLightningFrequency = strtol( pkvd->szValue, NULL, 10 );
 
 		pkvd->fHandled = true;
 	}
 	else if( FStrEq( pkvd->szKeyName, "xforce" ) )
 	{
-		m_iXJoltForce = strtol( pkvd->szValue, nullptr, 10 );
+		m_iXJoltForce = strtol( pkvd->szValue, NULL, 10 );
 
 		pkvd->fHandled = true;
 	}
 	else if( FStrEq( pkvd->szKeyName, "yforce" ) )
 	{
-		m_iYJoltForce = strtol( pkvd->szValue, nullptr, 10 );
+		m_iYJoltForce = strtol( pkvd->szValue, NULL, 10 );
 
 		pkvd->fHandled = true;
 	}
 	else if( FStrEq( pkvd->szKeyName, "zforce" ) )
 	{
-		m_iZJoltForce = strtol( pkvd->szValue, nullptr, 10 );
+		m_iZJoltForce = strtol( pkvd->szValue, NULL, 10 );
 
 		pkvd->fHandled = true;
 	}

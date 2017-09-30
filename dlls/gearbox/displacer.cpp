@@ -80,11 +80,10 @@ void CPortal::Animate(void)
 	UpdateBeams();
 }
 
-void CPortal::Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity, Vector vecAngles)
+void CPortal::Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity )
 {
 	CPortal *pSpit = GetClassPtr((CPortal *)NULL);
 	pSpit->Spawn();
-	pSpit->pev->angles = vecAngles;
 	UTIL_SetOrigin(pSpit->pev, vecStart);
 	pSpit->pev->velocity = vecVelocity *1.3;
 	pSpit->pev->owner = ENT(pevOwner);
@@ -670,7 +669,7 @@ void CDisplacer::Displace( void )
 	vecSrc = vecSrc + gpGlobals->v_right	* 8;
 	vecSrc = vecSrc + gpGlobals->v_up		* -12;
 
-	CPortal::Shoot(m_pPlayer->pev, vecSrc, gpGlobals->v_forward * 500, m_pPlayer->pev->v_angle);
+	CPortal::Shoot(m_pPlayer->pev, vecSrc, gpGlobals->v_forward * 500 );
 #endif
 }
 

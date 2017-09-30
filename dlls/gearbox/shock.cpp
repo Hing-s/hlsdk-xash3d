@@ -1,3 +1,4 @@
+
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
@@ -6,29 +7,12 @@
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
-*   Use, distribution, and modification of this source code and/or resulting
-*   object code is restricted to non-commercial enhancements to products from
-*   Valve LLC.  All other use, distribution, or modification is prohibited
-*   without written permission from Valve LLC.
+*   This source code contains proprietary and confidential information of
+*   Valve LLC and its suppliers.  Access to this code is restricted to
+*   persons who have executed a written SDK license with Valve.  Any access,
+*   use or distribution of this code by or to any unlicensed person is illegal.
 *
 ****/
-<<<<<<< HEAD
-
-#include "extdll.h"
-#include "util.h"
-#include "cbase.h"
-#include "monsters.h"
-#include "weapons.h"
-#include "nodes.h"
-#include "player.h"
-#include "explode.h"
-#include "shake.h"
-#include "gamerules.h"
-#include "effects.h"
-#include "decals.h"
-#include "soundent.h"
-#include "customentity.h"
-=======
 //=========================================================
 // shock - projectile shot from shockrifles.
 //=========================================================
@@ -47,9 +31,6 @@
 #include	"gamerules.h"
 #include	"customentity.h"
 
-#define SHOCK_AIR_VELOCITY		20000
-
-
 //=========================================================
 // Shockrifle projectile
 //=========================================================
@@ -63,6 +44,10 @@ public:
 	void Touch(CBaseEntity *pOther);
 	void EXPORT FlyThink();
 
+	virtual int		Save(CSave &save);
+	virtual int		Restore(CRestore &restore);
+	static	TYPEDESCRIPTION m_SaveData[];
+
 	void CreateEffects();
 	void ClearEffects();
 
@@ -73,7 +58,7 @@ public:
 
 LINK_ENTITY_TO_CLASS(shock_beam, CShock)
 
-CShockBeam *CShockBeam::Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity)
+TYPEDESCRIPTION	CShock::m_SaveData[] =
 {
 	DEFINE_FIELD(CShock, m_pBeam, FIELD_CLASSPTR),
 	DEFINE_FIELD(CShock, m_pNoise, FIELD_CLASSPTR),
@@ -82,7 +67,7 @@ CShockBeam *CShockBeam::Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVe
 
 IMPLEMENT_SAVERESTORE(CShock, CBaseAnimating)
 
-void CShockBeam::Spawn( )
+void CShock::Spawn(void)
 {
 	Precache();
 	pev->movetype = MOVETYPE_FLY;
@@ -95,8 +80,8 @@ void CShockBeam::Spawn( )
 		pev->dmg = gSkillData.plrDmgShockroachMultiplayer;
 	else
 		pev->dmg = gSkillData.plrDmgShockroachSingleplayer;
-
 	UTIL_SetSize(pev, Vector(-4, -4, -4), Vector(4, 4, 4));
+
 	CreateEffects();
 	SetThink( &CShock::FlyThink );
 	pev->nextthink = gpGlobals->time;
@@ -131,6 +116,9 @@ void CShock::FlyThink()
 
 void CShock::Shoot(entvars_t *pevOwner, const Vector angles, const Vector vecStart, const Vector vecVelocity)
 {
+	CShock *pShock = GetClassPtr((CShock *)NULL);
+	pShock->Spawn();
+
 	UTIL_SetOrigin(pShock->pev, vecStart);
 	pShock->pev->velocity = vecVelocity;
 	pShock->pev->owner = ENT(pevOwner);
@@ -139,23 +127,30 @@ void CShock::Shoot(entvars_t *pevOwner, const Vector angles, const Vector vecSta
 	pShock->pev->nextthink = gpGlobals->time;
 }
 
-void CShockBeam::ExplodeThink( void )
+void CShock::Touch(CBaseEntity *pOther)
 {
-	int iContents = UTIL_PointContents ( pev->origin );
-	int iScale;
+	// Do not collide with the owner.
+	if (ENT(pOther->pev) == pev->owner)
+		return;
 
-	BlastOff();
+	TraceResult tr = UTIL_GetGlobalTrace( );
+	int		iPitch, iVolume;
 
-	iScale = 10;
+	// Lower the volume if touched entity is not a player.
+	iVolume = (!pOther->IsPlayer())
+		? RANDOM_FLOAT(0.4f, 0.5f)
+		: RANDOM_FLOAT(0.8f, 1);
 
-	EMIT_SOUND(ENT(pev), CHAN_BODY, "weapons/shock_impact.wav", 1, ATTN_NORM);
+	iPitch = RANDOM_FLOAT(80, 110);
 
+	// splat sound
+	EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "weapons/shock_impact.wav", iVolume, ATTN_NORM, 0, iPitch);
 	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
 		WRITE_BYTE(TE_DLIGHT);
 		WRITE_COORD(pev->origin.x);	// X
 		WRITE_COORD(pev->origin.y);	// Y
 		WRITE_COORD(pev->origin.z);	// Z
-		WRITE_BYTE( 6 );		// radius * 0.1
+		WRITE_BYTE( 8 );		// radius * 0.1
 		WRITE_BYTE( 0 );		// r
 		WRITE_BYTE( 255 );		// g
 		WRITE_BYTE( 255 );		// b
@@ -169,7 +164,7 @@ void CShockBeam::ExplodeThink( void )
 		// make a splat on the wall
 		UTIL_DecalTrace(&tr, DECAL_SMALLSCORCH1 + RANDOM_LONG(0, 2));
 
-		entvars_t *pevOwner;
+		int iContents = UTIL_PointContents(pev->origin);
 
 		// Create sparks
 		if (iContents != CONTENTS_WATER)

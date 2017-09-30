@@ -3450,11 +3450,7 @@ void CBaseMonster::GlowShellUpdate( void )
 {
 	if( m_glowShellUpdate )
 	{
-<<<<<<< HEAD
-		if( ( gpGlobals->time - m_glowShellStartTime ) > m_glowShellDuration )
-=======
 		if( gpGlobals->time > m_glowShellTime || pev->deadflag == DEAD_DEAD )
->>>>>>> cd0e284... Fix shock effect (#9)
 			GlowShellOff();
 	}
 }
