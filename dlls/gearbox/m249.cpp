@@ -132,8 +132,8 @@ void CM249::PrimaryAttack()
 		return;
 	}
 
-	m_pPlayer->pev->punchangle.x = RANDOM_FLOAT( 1.0f, 2.5f );
-	m_pPlayer->pev->punchangle.y = RANDOM_FLOAT( -1.0f, -2.5f );
+	m_pPlayer->pev->punchangle.x = RANDOM_FLOAT( 1.0f, 1.5f );
+	m_pPlayer->pev->punchangle.y = RANDOM_FLOAT( -0.5f, -0.2f );
 
 	m_pPlayer->m_iWeaponVolume = NORMAL_GUN_VOLUME;
 	m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;
@@ -176,14 +176,13 @@ void CM249::PrimaryAttack()
 
 
 #ifndef CLIENT_DLL
-	// Add inverse impulse, but only if we are on the ground.
-	// This is mainly to avoid too-high air velocity.
-	if (m_pPlayer->pev->flags & FL_ONGROUND)
-	{
-		float flZVel = m_pPlayer->pev->velocity.z;
+	// Add inverse impulse.
+	float flZVel = m_pPlayer->pev->velocity.z;
 
-		m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * (130 + (RANDOM_LONG(1, 2) * 2));
-	}
+	m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * (40 + (RANDOM_LONG(1, 2) * 2));
+
+	// Add backward velocity
+	m_pPlayer->pev->velocity.z = flZVel;
 #endif
 
 	if (!m_iClip && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
@@ -204,7 +203,7 @@ void CM249::Reload(void)
 	if (m_pPlayer->ammo_556 <= 0)
 		return;
 
-	DefaultReload(M249_MAX_CLIP, M249_RELOAD1, 3.65);
+	DefaultReload(M249_MAX_CLIP, M249_RELOAD1, 1.5);
 }
 
 
