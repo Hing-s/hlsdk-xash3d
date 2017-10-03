@@ -6,41 +6,64 @@
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
-*   Use, distribution, and modification of this source code and/or resulting
-*   object code is restricted to non-commercial enhancements to products from
-*   Valve LLC.  All other use, distribution, or modification is prohibited
-*   without written permission from Valve LLC.
+*   This source code contains proprietary and confidential information of
+*   Valve LLC and its suppliers.  Access to this code is restricted to
+*   persons who have executed a written SDK license with Valve.  Any access,
+*   use or distribution of this code by or to any unlicensed person is illegal.
 *
 ****/
+#ifndef GAME_SERVER_ENTITIES_WEAPONS_CBARNACLEGRAPPLETIP_H
+#define GAME_SERVER_ENTITIES_WEAPONS_CBARNACLEGRAPPLETIP_H
+enum CheckTarget
+{
+	NOT_A_TARGET	= 0,
+	SMALL			= 1,
+	MEDIUM			= 2,
+	LARGE			= 3,
+	FIXED			= 4,
+};
 
-#ifndef GRAPPLE_TONGUETIP_H
-#define GRAPPLE_TONGUETIP_H
-
-class CGrapple;
-
-//
-//
-//
-class CGrappleTonguetip : public CBaseEntity
+class CBarnacleGrappleTip : public CBaseEntity
 {
 public:
 
-#ifndef CLIENT_DLL
-	virtual int		Save(CSave &save);
-	virtual int		Restore(CRestore &restore);
+/*	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
 	static	TYPEDESCRIPTION m_SaveData[];
-#endif
+*/
+	int targetClass;
+	void Precache();
+	void Spawn();
 
-	void Spawn(void);
-	void HitThink(void);
-	void TipTouch(CBaseEntity* pOther);
-	void PreRemoval(void);
+	void FlyThink();
+	void OffsetThink();
 
-	CGrapple* m_pMyGrappler;
+	void TongueTouch( CBaseEntity* pOther );
 
+	int CheckTarget( CBaseEntity* pTarget );
+
+	void SetPosition( Vector vecOrigin, Vector vecAngles, CBaseEntity* pOwner );
+
+	int GetGrappleType() const { return m_GrappleType; }
+
+	bool IsStuck() const { return m_bIsStuck; }
+
+	bool HasMissed() const { return m_bMissed; }
+
+	EHANDLE& GetGrappleTarget() { return m_hGrappleTarget; }
+
+	void SetGrappleTarget( CBaseEntity* pTarget )
+	{
+		m_hGrappleTarget = pTarget;
+	}
 private:
-	static CGrappleTonguetip* CreateTip(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity);
-	friend class CGrapple;
+	int m_GrappleType;
+	bool m_bIsStuck;
+	bool m_bMissed;
+#ifndef CLIENT_DLL
+	EHANDLE m_hGrappleTarget;
+#endif
+	Vector m_vecOriginOffset;
 };
 
-#endif // GRAPPLE_TONGUETIP_H
+#endif //GAME_SERVER_ENTITIES_WEAPONS_CBARNACLEGRAPPLETIP_H

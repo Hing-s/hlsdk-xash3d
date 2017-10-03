@@ -29,7 +29,6 @@ SRCS+=gearbox/hud_nightvision.cpp
 SRCS+=../dlls/gearbox/displacer.cpp
 SRCS+=../dlls/gearbox/knife.cpp
 SRCS+=../dlls/gearbox/eagle.cpp
-SRCS+=../dlls/gearbox/grapple.cpp
 SRCS+=../dlls/gearbox/m249.cpp
 SRCS+=../dlls/gearbox/penguin.cpp
 SRCS+=../dlls/gearbox/pipewrench.cpp

@@ -6,239 +6,379 @@
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
-*   Use, distribution, and modification of this source code and/or resulting
-*   object code is restricted to non-commercial enhancements to products from
-*   Valve LLC.  All other use, distribution, or modification is prohibited
-*   without written permission from Valve LLC.
+*   This source code contains proprietary and confidential information of
+*   Valve LLC and its suppliers.  Access to this code is restricted to
+*   persons who have executed a written SDK license with Valve.  Any access,
+*   use or distribution of this code by or to any unlicensed person is illegal.
 *
 ****/
-
 #include "extdll.h"
 #include "util.h"
 #include "cbase.h"
-#include "monsters.h"
 #include "weapons.h"
-#include "nodes.h"
-#include "player.h"
 #include "gamerules.h"
-#include "customentity.h"
+#include "player.h"
 #include "grapple_tonguetip.h"
-#include <string.h>
+#include "skill.h"
+#include "nodes.h"
+#include "soundent.h"
+#include "effects.h"
+#include "customentity.h"
 
-#ifndef CLIENT_DLL
-LINK_ENTITY_TO_CLASS(grapple_tonguetip, CGrappleTonguetip);
-
-TYPEDESCRIPTION	CGrappleTonguetip::m_SaveData[] =
+/*TYPEDESCRIPTION	CBarnacleGrappleTip::m_SaveData[] =
 {
-	DEFINE_FIELD(CGrappleTonguetip, m_pMyGrappler, FIELD_CLASSPTR),
+	DEFINE_THINKFUNC( CBarnacleGrappleTip, FlyThink ),
+	DEFINE_THINKFUNC( CBarnacleGrappleTip, OffsetThink ),
+	DEFINE_TOUCHFUNC( CBarnacleGrappleTip, TongueTouch )
+};
+IMPLEMENT_SAVERESTORE( CBarnacleGrappleTip, CBaseEntity )
+*/
+#ifndef CLIENT_DLL
+
+LINK_ENTITY_TO_CLASS( grapple_tip, CBarnacleGrappleTip );
+
+//TODO: this should be handled differently. A method that returns an overall size, another whether it's fixed, etc. - Solokiller
+const char *grapple_small[] = 
+{
+	"monster_bloater",
+	"monster_snark",
+	"monster_shockroach",
+	"monster_rat",
+	"monster_alien_babyvoltigore",
+	"monster_babycrab",
+	"monster_cockroach",
+	"monster_flyer_flock",
+	"monster_headcrab",
+	"monster_leech",
+	"monster_penguin"
 };
 
-IMPLEMENT_SAVERESTORE(CGrappleTonguetip, CBaseEntity);
-
-//=========================================================
-// Purpose: Spawn
-//=========================================================
-void CGrappleTonguetip::Spawn(void)
+const char *grapple_medium[] = 
 {
-	pev->movetype = MOVETYPE_TOSS;
-	pev->classname = MAKE_STRING("grapple_tonguetip");
+	"monster_alien_controller",
+	"monster_alien_slave",
+	"monster_barney",
+	"monster_bullchicken",
+	"monster_cleansuit_scientist",
+	"monster_houndeye",
+	"monster_human_assassin",
+	"monster_human_grunt",
+	"monster_human_grunt_ally",
+	"monster_human_medic_ally",
+	"monster_human_torch_ally",
+	"monster_male_assassin",
+	"monster_otis",
+	"monster_pitdrone",
+	"monster_scientist",
+	"monster_zombie",
+	"monster_zombie_barney",
+	"monster_zombie_soldier"
+};
+
+const char *grapple_large[] = 
+{
+	"monster_alien_grunt",
+	"monster_alien_voltigore",
+	"monster_assassin_repel",
+	"monster_grunt_ally_repel",
+	"monster_bigmomma",
+	"monster_gargantua",
+	"monster_geneworm",
+	"monster_gonome",
+	"monster_grunt_repel",
+	"monster_ichthyosaur",
+	"monster_nihilanth",
+	"monster_pitworm",
+	"monster_pitworm_up",
+	"monster_shocktrooper"
+};
+
+const char *grapple_fixed[] = 
+{
+	"monster_barnacle",
+	"monster_sitting_cleansuit_scientist",
+	"monster_sitting_scientist",
+	"monster_tentacle",
+	"ammo_spore"
+};
+
+void CBarnacleGrappleTip::Precache()
+{
+	PRECACHE_MODEL( "models/shock_effect.mdl" );
+}
+
+void CBarnacleGrappleTip::Spawn()
+{
+	Precache();
+
+	pev->movetype = MOVETYPE_FLY;
 	pev->solid = SOLID_BBOX;
-	pev->rendermode = kRenderTransTexture;
-	pev->renderamt = 0;
-	pev->gravity = 0.01;
 
-	SET_MODEL(ENT(pev), "models/v_bgrap_tonguetip.mdl");
+	SET_MODEL( ENT(pev), "models/shock_effect.mdl" );
 
-	UTIL_SetSize(pev, Vector(0, 0, 0), Vector(0, 0, 0));
+	UTIL_SetSize( pev, Vector(0, 0, 0), Vector(0, 0, 0) );
 
-	SetTouch(&CGrappleTonguetip::TipTouch);
+	UTIL_SetOrigin( pev, pev->origin );
+
+	SetThink( &CBarnacleGrappleTip::FlyThink );
+	SetTouch( &CBarnacleGrappleTip::TongueTouch );
+
+	Vector vecAngles = pev->angles;
+
+	vecAngles.x -= 30.0;
+
+	pev->angles = vecAngles;
+
+	UTIL_MakeVectors( pev->angles );
+
+	vecAngles.x = -( 30.0 + vecAngles.x );
+
+	pev->velocity = g_vecZero;
+
+	pev->gravity = 1.0;
+
+	pev->nextthink = gpGlobals->time + 0.02;
+
+	m_bIsStuck = FALSE;
+	m_bMissed = FALSE;
 }
 
-
-//=========================================================
-// Purpose: CreateTip
-//=========================================================
-CGrappleTonguetip* CGrappleTonguetip::CreateTip(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity)
+void CBarnacleGrappleTip::FlyThink()
 {
-	CGrappleTonguetip* pTonguetip = GetClassPtr((CGrappleTonguetip *)NULL);
-	pTonguetip->Spawn();
+	UTIL_MakeAimVectors( pev->angles );
 
-	UTIL_SetOrigin(pTonguetip->pev, vecStart);
-	pTonguetip->pev->velocity = vecVelocity;
-	pTonguetip->pev->owner = ENT(pevOwner);
-	pTonguetip->m_pMyGrappler = GetClassPtr((CGrapple*)pevOwner);
-	pTonguetip->m_pMyGrappler->checkTarg = 0;
+	pev->angles = UTIL_VecToAngles( gpGlobals->v_forward );
 
-	return pTonguetip;
-}
+	const float flNewVel = ( ( pev->velocity.Length() * 0.8 ) + 400.0 );
 
-//=========================================================
-// Purpose: HitThink
-//=========================================================
-void CGrappleTonguetip::HitThink(void)
-{
-	//ALERT(at_console, "HitT.hink\n");
-	pev->nextthink = gpGlobals->time;
-}
+	pev->velocity = pev->velocity * 0.2 + ( flNewVel * gpGlobals->v_forward );
 
-//=========================================================
-// Purpose: TipTouch
-//=========================================================
-void CGrappleTonguetip::TipTouch(CBaseEntity *pOther)
-{
-	// Do not collide with the owner.
-	if (ENT(pOther->pev) == pev->owner || (ENT(pOther->pev) == VARS(pev->owner)->owner) || (pOther == m_pMyGrappler ))
-		return;
-//	CBaseEntity *pTouchedEnt = CBaseEntity::Instance( pOther );
-
-	TraceResult tr;
-	float rgfl1[3];
-	float rgfl2[3];
-	const char *pTextureName;
-	Vector vecSrc = pev->origin;
-	Vector vecEnd = pev->origin + pev->velocity * 10;
-
-	UTIL_TraceLine(vecSrc, vecEnd, dont_ignore_monsters, ENT(pev), &tr);
-
-	CBaseEntity *pEntity = CBaseEntity::Instance(tr.pHit);
-	vecSrc.CopyToArray(rgfl1);
-	vecEnd.CopyToArray(rgfl2);
-
-	if (pEntity)
-		pTextureName = TRACE_TEXTURE(ENT(pEntity->pev), rgfl1, rgfl2);
-	else
-		pTextureName = TRACE_TEXTURE(ENT(0), rgfl1, rgfl2);
-
-
-	int content = UTIL_PointContents(tr.vecEndPos);
-	int hitFlags = pOther->pev->flags;
-	m_pMyGrappler->m_iHitFlags	= hitFlags;
-	//float m_IsPull;
-	if(FClassnameIs( pOther->pev, "monster_barnacle"))
-		m_pMyGrappler->checkTarg = 1;
-	else if((hitFlags & (FL_CLIENT | FL_MONSTER)) || (FClassnameIs( pOther->pev, "ammo_spore")))
+	if( !g_pGameRules->IsMultiplayer() )
 	{
-		// Set player attached flag.
-		if (pOther->IsPlayer())
-			((CBasePlayer*)pOther)->m_afPhysicsFlags |= PFLAG_ATTACHED;
-
-		pev->movetype = MOVETYPE_FOLLOW;
-		pev->aiment = ENT(pOther->pev);
-		pev->velocity = pev->velocity.Normalize();
-
-		m_pMyGrappler->OnTongueTipHitEntity(pOther);
-		m_pMyGrappler->m_fTipHit	= TRUE;
-		m_pMyGrappler->checkTarg = 0;
-	/*	UTIL_SetOrigin( pev, pOther->Center());
-		pev->velocity = pOther->velocity;
-		SetThink(&CGrappleTonguetip::HitThink);
-		pev->nextthink = gpGlobals->time;*/
-	}
-	else if( pTextureName && m_pMyGrappler && (!strcmp (pTextureName, "xeno_grapple" )))
-	{
-		pev->velocity = Vector(0, 0, 0);
-		pev->movetype = MOVETYPE_NONE;
-		pev->gravity = 0.0f;
-		m_pMyGrappler->m_fTipHit	= TRUE;
-		hitFlags = 0;
-		m_pMyGrappler->OnTongueTipHitSurface(tr.vecEndPos);
-		m_pMyGrappler->checkTarg = 0;
+		//Note: the old grapple had a maximum velocity of 1600. - Solokiller
+		if( pev->velocity.Length() > 750.0 )
+		{
+			pev->velocity = pev->velocity.Normalize() * 750.0;
+		}
 	}
 	else
 	{
-		m_pMyGrappler->m_fTipHit	= FALSE;
-		hitFlags = 0;
-		m_pMyGrappler->checkTarg = 1;
+		//TODO: should probably clamp at sv_maxvelocity to prevent the tip from going off course. - Solokiller
+		if( pev->velocity.Length() > 2000.0 )
+		{
+			pev->velocity = pev->velocity.Normalize() * 2000.0;
+		}
 	}
 
-	EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "weapons/bgrapple_impact.wav", 1, ATTN_NORM, 0, 100);
+	pev->nextthink = gpGlobals->time + 0.02;
+}
+
+void CBarnacleGrappleTip::OffsetThink()
+{
+	//Nothing
+}
+
+void CBarnacleGrappleTip::TongueTouch( CBaseEntity* pOther )
+{
+	if( !pOther )
+	{
+		targetClass = NOT_A_TARGET;
+		m_bMissed = TRUE;
+	}
+	else
+	{
+		if( pOther->IsPlayer() )
+		{
+			targetClass = MEDIUM;
+
+			m_hGrappleTarget = pOther;
+
+			m_bIsStuck = TRUE;
+		}
+		else
+		{
+			targetClass = CheckTarget( pOther );
+
+			if( targetClass != NOT_A_TARGET )
+			{
+				m_bIsStuck = TRUE;
+			}
+			else
+			{
+				m_bMissed = TRUE;
+			}
+		}
+	}
+
+	pev->velocity = g_vecZero;
+
+	m_GrappleType = targetClass;
+
+	SetThink( &CBarnacleGrappleTip::OffsetThink );
+	pev->nextthink = gpGlobals->time + 0.02;
 
 	SetTouch( NULL );
 }
 
-void CGrappleTonguetip::PreRemoval(void)
+int CBarnacleGrappleTip::CheckTarget( CBaseEntity* pTarget )
 {
-	if (pev->aiment != NULL)
+	if( !pTarget )
+		return 0;
+
+	if( pTarget->IsPlayer() )
 	{
-		CBaseEntity* pEnt = GetClassPtr((CBaseEntity*)VARS(pev->aiment));
-		if (pEnt && pEnt->IsPlayer())
+		m_hGrappleTarget = pTarget;
+
+		return 2;
+	}
+
+	Vector vecStart = pev->origin;
+	Vector vecEnd = pev->origin + pev->velocity * 1024.0;
+
+	TraceResult tr;
+
+	UTIL_TraceLine( vecStart, vecEnd, ignore_monsters, edict(), &tr );
+
+	CBaseEntity* pHit = Instance( tr.pHit );
+
+/*	if( !pHit )
+		pHit = CWorld::GetInstance();*/
+
+	float rgfl1[3];
+	float rgfl2[3];
+	const char *pTexture;
+
+	vecStart.CopyToArray(rgfl1);
+	vecEnd.CopyToArray(rgfl2);
+
+	if (pHit)
+		pTexture = TRACE_TEXTURE(ENT(pHit->pev), rgfl1, rgfl2);
+	else
+		pTexture = TRACE_TEXTURE(ENT(0), rgfl1, rgfl2);
+
+	bool bIsFixed = FALSE;
+
+	if( pTexture && strnicmp( pTexture, "xeno_grapple", 12 ) == 0 )
+	{
+		bIsFixed = TRUE;
+	}
+	else
+	{
+		for( size_t uiIndex = 0; uiIndex < ARRAYSIZE( grapple_small ); ++uiIndex )
 		{
-			// Remove attached flag of the target entity.
-			((CBasePlayer*)pEnt)->m_afPhysicsFlags &= ~PFLAG_ATTACHED;
+			if( strcmp( STRING(pTarget->pev->classname), grapple_small[ uiIndex ] ) == 0 )
+			{
+				m_hGrappleTarget = pTarget;
+				m_vecOriginOffset = pev->origin - pTarget->pev->origin;
+
+				return 1;
+			}
+		}
+
+		for( size_t uiIndex = 0; uiIndex < ARRAYSIZE( grapple_medium ); ++uiIndex )
+		{
+			if( strcmp( STRING(pTarget->pev->classname), grapple_medium[ uiIndex ] ) == 0 )
+			{
+				m_hGrappleTarget = pTarget;
+				m_vecOriginOffset = pev->origin - pTarget->pev->origin;
+
+				return 2;
+			}
+		}
+
+		for( size_t uiIndex = 0; uiIndex < ARRAYSIZE( grapple_large ); ++uiIndex )
+		{
+			if( strcmp( STRING(pTarget->pev->classname), grapple_large[ uiIndex ] ) == 0 )
+			{
+				m_hGrappleTarget = pTarget;
+				m_vecOriginOffset = pev->origin - pTarget->pev->origin;
+
+				return 3;
+			}
+		}
+
+		for( size_t uiIndex = 0; uiIndex < ARRAYSIZE( grapple_fixed ); ++uiIndex )
+		{
+			if( strcmp( STRING(pTarget->pev->classname), grapple_fixed[ uiIndex ] ) == 0 )
+			{
+				bIsFixed = TRUE;
+				break;
+			}
 		}
 	}
-CBaseEntity::PreRemoval();
+
+	if( bIsFixed )
+	{
+		m_hGrappleTarget = pTarget;
+		m_vecOriginOffset = g_vecZero;
+
+		return 4;
+	}
+
+	return 0;
+}
+
+void CBarnacleGrappleTip::SetPosition( Vector vecOrigin, Vector vecAngles, CBaseEntity* pOwner )
+{
+	UTIL_SetOrigin( pev, vecOrigin );
+	pev->angles = vecAngles;
+	pev->owner = pOwner->edict();
 }
 #endif
-
-LINK_ENTITY_TO_CLASS(weapon_grapple, CGrapple);
-
-enum bgrap_e {
-	BGRAP_BREATHE = 0,
-	BGRAP_LONGIDLE,
-	BGRAP_SHORTIDLE,
-	BGRAP_COUGH,
-	BGRAP_DOWN,
-	BGRAP_UP,
-	BGRAP_FIRE,
-	BGRAP_FIREWAITING,
-	BGRAP_FIREREACHED,
-	BGRAP_FIRETRAVEL,
-	BGRAP_FIRERELEASE,
+enum BarnacleGrappleAnim
+{
+	BGRAPPLE_BREATHE = 0,
+	BGRAPPLE_LONGIDLE,
+	BGRAPPLE_SHORTIDLE,
+	BGRAPPLE_COUGH,
+	BGRAPPLE_DOWN,
+	BGRAPPLE_UP,
+	BGRAPPLE_FIRE,
+	BGRAPPLE_FIREWAITING,
+	BGRAPPLE_FIREREACHED,
+	BGRAPPLE_FIRETRAVEL,
+	BGRAPPLE_FIRERELEASE
 };
 
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::Spawn()
-{
+LINK_ENTITY_TO_CLASS( weapon_grapple, CBarnacleGrapple );
 
-	SetThink( NULL );
+
+void CBarnacleGrapple::Precache( void )
+{
+	PRECACHE_MODEL( "models/v_bgrap.mdl" );
+	PRECACHE_MODEL( "models/w_bgrap.mdl" );
+	PRECACHE_MODEL( "models/p_bgrap.mdl" );
+
+	PRECACHE_SOUND( "weapons/bgrapple_release.wav" );
+	PRECACHE_SOUND( "weapons/bgrapple_impact.wav" );
+	PRECACHE_SOUND( "weapons/bgrapple_fire.wav" );
+	PRECACHE_SOUND( "weapons/bgrapple_cough.wav" );
+	PRECACHE_SOUND( "weapons/bgrapple_pull.wav" );
+	PRECACHE_SOUND( "weapons/bgrapple_wait.wav" );
+	PRECACHE_SOUND( "weapons/alienweap_draw.wav" );
+	PRECACHE_SOUND( "barnacle/bcl_chew1.wav" );
+	PRECACHE_SOUND( "barnacle/bcl_chew2.wav" );
+	PRECACHE_SOUND( "barnacle/bcl_chew3.wav" );
+
+	PRECACHE_MODEL( "sprites/tongue.spr" );
+
+	UTIL_PrecacheOther( "grapple_tip" );
+}
+
+void CBarnacleGrapple::Spawn( void )
+{
+	pev->classname = MAKE_STRING( "weapon_grapple" ); // hack to allow for old names
 	Precache();
 	m_iId = WEAPON_GRAPPLE;
-	SET_MODEL(ENT(pev), "models/w_bgrap.mdl");
+	SET_MODEL( ENT(pev), "models/w_bgrap.mdl" );
+	m_pTip = NULL;
+	m_bGrappling = FALSE;
 	m_iClip = -1;
 
-	m_pBeam			= NULL;
-	m_pTongueTip	= NULL;
-	m_fTipHit		= FALSE;
-	m_fPlayPullSound = FALSE;
-
-	m_iHitFlags		= 0;
-	m_iFirestate	= FIRESTATE_NONE;
-
-	m_flNextPullSoundTime = 0.0f;
-
-	FallInit();// get ready to fall down.
+	FallInit();
 }
 
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::Precache(void)
-{
-	PRECACHE_MODEL("models/v_bgrap.mdl");
-	PRECACHE_MODEL("models/v_bgrap_tonguetip.mdl");
-
-	PRECACHE_MODEL("models/w_bgrap.mdl");
-	PRECACHE_MODEL("models/p_bgrap.mdl");
-
-	PRECACHE_SOUND("weapons/alienweap_draw.wav");
-
-	PRECACHE_SOUND("weapons/bgrapple_cough.wav");
-	PRECACHE_SOUND("weapons/bgrapple_fire.wav");
-	PRECACHE_SOUND("weapons/bgrapple_impact.wav");
-	PRECACHE_SOUND("weapons/bgrapple_pull.wav");
-	PRECACHE_SOUND("weapons/bgrapple_release.wav");
-	PRECACHE_SOUND("weapons/bgrapple_wait.wav");
-
-	PRECACHE_MODEL("sprites/tongue.spr");
-}
-
-//=========================================================
-// Purpose:
-//=========================================================
-int CGrapple::GetItemInfo(ItemInfo *p)
+int CBarnacleGrapple::GetItemInfo(ItemInfo *p)
 {
 	p->pszName = STRING(pev->classname);
 	p->pszAmmo1 = NULL;
@@ -248,637 +388,479 @@ int CGrapple::GetItemInfo(ItemInfo *p)
 	p->iMaxClip = WEAPON_GRAPPLE;
 	p->iSlot = 0;
 	p->iPosition = 3;
-	p->iId = WEAPON_GRAPPLE;
+	p->iId = m_iId = WEAPON_GRAPPLE;
 	p->iWeight = GRAPPLE_WEIGHT;
 	return 1;
 }
 
-//=========================================================
-// Purpose:
-//=========================================================
-BOOL CGrapple::Deploy()
+int CBarnacleGrapple::AddToPlayer( CBasePlayer* pPlayer )
 {
-	m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.9f;
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.9f;
-	timer = gpGlobals->time;
-	deadflag = 0;
-	return DefaultDeploy("models/v_bgrap.mdl", "models/p_bgrap.mdl", BGRAP_UP, "bgrap");
+	if (CBasePlayerWeapon::AddToPlayer(pPlayer))
+	{
+		MESSAGE_BEGIN(MSG_ONE, gmsgWeapPickup, NULL, pPlayer->pev);
+			WRITE_BYTE(m_iId);
+		MESSAGE_END();
+		return TRUE;
+	}
+	return FALSE;
 }
 
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::Holster(int skiplocal /* = 0 */)
+BOOL CBarnacleGrapple::Deploy()
 {
-	FireRelease();
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.9;
+	return DefaultDeploy("models/v_bgrap.mdl", "models/p_bgrap.mdl", BGRAPPLE_UP, "gauss" );
+}
 
+void CBarnacleGrapple::Holster( int skiplocal /* = 0 */ )
+{
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 0.5;
-	SendWeaponAnim(BGRAP_DOWN);
+
+	if( m_FireState != OFF )
+		EndAttack();
+
+	SendWeaponAnim( BGRAPPLE_DOWN );
 }
 
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::PrimaryAttack(void)
+void CBarnacleGrapple::WeaponIdle( void )
 {
-	if (m_iFirestate != FIRESTATE_NONE)
-		return;
-
-	m_iFirestate = FIRESTATE_FIRE;
-
-	m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + RANDOM_FLOAT(10, 15);
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase();
-}
-
-//=========================================================
-// Purpose:	``
-//=========================================================
-void CGrapple::ItemPostFrame(void)
-{
-	if (!(m_pPlayer->pev->button & IN_ATTACK))
-	{
-		m_flLastFireTime = 0.0f;
-	}
-
-
-	if (m_iFirestate != FIRESTATE_NONE)
-	{
-		if (m_fTipHit)
-		{
-			Pull();
-		}
-
-		// Check if fire is still eligible.
-		CheckFireEligibility();
-		CheckTargets();
-		// Check if the current tip is attached to a monster or a wall.
-		// If the tongue tip move type is MOVETYPE_FOLLOW, then it
-		// implies that we are targetting a monster, so it will kill
-		// the monster when close enough.
-		CheckTargetProximity();
-
-		// Update the tip velocity and position.
-		UpdateTongueTip();
-
-		// Update the tongue beam.
-		UpdateBeam();
-
-		// Update the pull sound.
-		UpdatePullSound();
-	}
-
-	if ((m_pPlayer->pev->button & IN_ATTACK) && CanAttack(m_flNextPrimaryAttack, gpGlobals->time, UseDecrement()))
-	{
-		if ((m_iClip == 0 && pszAmmo1()) || (iMaxClip() == -1 && !m_pPlayer->m_rgAmmo[PrimaryAmmoIndex()]))
-		{
-			m_fFireOnEmpty = TRUE;
-		}
-
-#ifndef CLIENT_DLL
-		m_pPlayer->TabulateAmmo();
-#endif
-		PrimaryAttack();
-		m_pPlayer->pev->button &= ~IN_ATTACK;
-	}
-	else if (!(m_pPlayer->pev->button & (IN_ATTACK | IN_ATTACK2)))
-	{
-		if (m_iFirestate != FIRESTATE_NONE)
-		{
-			FireRelease();
-		}
-
-#ifndef CLIENT_DLL
-		// no fire buttons down
-
-		m_fFireOnEmpty = FALSE;
-
-		if (!IsUseable() && m_flNextPrimaryAttack < (UseDecrement() ? 0.0 : gpGlobals->time))
-		{
-			// weapon isn't useable, switch.
-			if (!(iFlags() & ITEM_FLAG_NOAUTOSWITCHEMPTY) && g_pGameRules->GetNextBestWeapon(m_pPlayer, this))
-			{
-				m_flNextPrimaryAttack = (UseDecrement() ? 0.0 : gpGlobals->time) + 0.3;
-				return;
-			}
-		}
-#endif
-
-		WeaponIdle();
-		return;
-	}
-
-	// catch all
-	if (ShouldWeaponIdle())
-	{
-		WeaponIdle();
-	}
-}
-
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::WeaponIdle(void)
-{
-	if(deadflag == 1)
-	{
-		FireRelease();
-		deadflag = 0;
-		return;
-	}
-
 	ResetEmptySound();
 
-	if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase())
+	if( m_flTimeWeaponIdle > UTIL_WeaponTimeBase() )
 		return;
 
-	if (m_iFirestate != FIRESTATE_NONE)
+	if( m_FireState != OFF )
 	{
-		switch (m_iFirestate)
-		{
-		case FIRESTATE_FIRE:
-			Fire();
-			break;
-
-		case FIRESTATE_FIRE2:
-			Fire2();
-			break;
-
-		case FIRESTATE_WAIT:
-			FireWait();
-			break;
-
-		case FIRESTATE_REACH:
-			FireReach();
-			break;
-
-		case FIRESTATE_TRAVEL:
-			FireTravel();
-			break;
-
-		case FIRESTATE_RELEASE:
-			FireRelease();
-			break;
-
-		default:
-			break;
-		}
-		return;
+		EndAttack();
 	}
+
+	m_bMissed = FALSE;
+
+	const float flNextIdle = RANDOM_FLOAT( 0.0, 1.0 );
 
 	int iAnim;
-	float flRand = UTIL_SharedRandomFloat(m_pPlayer->random_seed, 0, 1);
-	if (flRand <= 0.8f)
+
+	if( flNextIdle <= 0.5 )
 	{
-		iAnim = BGRAP_BREATHE;
-		m_flTimeWeaponIdle = 2.6f;
+		iAnim = BGRAPPLE_LONGIDLE;
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 10.0;
 	}
-	else if (flRand <= 0.7f)
+	else if( flNextIdle > 0.95 )
 	{
-		iAnim = BGRAP_LONGIDLE;
-		m_flTimeWeaponIdle = 10.0f;
-	}
-	else if (flRand <= 0.95)
-	{
-		iAnim = BGRAP_SHORTIDLE;
-		m_flTimeWeaponIdle = 1.3f;
+		EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/bgrapple_cough.wav", 1, ATTN_NORM);
+
+		iAnim = BGRAPPLE_COUGH;
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 4.6;
 	}
 	else
 	{
-		iAnim = BGRAP_COUGH;
-		m_flTimeWeaponIdle = 4.6f;
-
-		EMIT_SOUND(ENT(pev), CHAN_BODY, "weapons/bgrapple_cough.wav", 1, ATTN_NORM);
+		iAnim = BGRAPPLE_BREATHE;
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 2.566;
 	}
 
-	SendWeaponAnim(iAnim, UseDecrement());
+	SendWeaponAnim( iAnim );
 }
 
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::Fire(void)
+void CBarnacleGrapple::PrimaryAttack( void )
 {
-	EMIT_SOUND(ENT(pev), CHAN_BODY, "weapons/bgrapple_fire.wav", 1, ATTN_NORM);
+	if( m_bMissed )
+	{
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.1;
+		return;
+	}
 
-	SendWeaponAnim(BGRAP_FIRE, UseDecrement());
-	m_iFirestate = FIRESTATE_FIRE2;
+	UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
 
-	m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + RANDOM_FLOAT(15, 20);
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.45f;
-}
+	if( m_pTip )
+	{
+		if( m_pTip->IsStuck() )
+		{
+			CBaseEntity* pTarget = m_pTip->GetGrappleTarget();
 
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::Fire2(void)
-{
-	// Create the tongue tip.
-	CreateTongueTip();
+			if( !pTarget )
+			{
+				EndAttack();
+				return;
+			}
 
-	// Start the pull sound.
-	StartPullSound();
+			if( m_pTip->GetGrappleType() > SMALL )
+			{
+				m_pPlayer->pev->movetype = MOVETYPE_FLY;
+				//Tells the physics code that the player is not on a ladder - Solokiller
+				m_pPlayer->pev->flags |= FL_IMMUNE_LAVA;
+			}
 
-	m_iFirestate = FIRESTATE_WAIT;
+			if( m_bMomentaryStuck )
+			{
+				SendWeaponAnim( BGRAPPLE_FIRETRAVEL );
 
-	m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + RANDOM_FLOAT(15, 20);
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase();
-}
+				EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/bgrapple_impact.wav", 0.98 , ATTN_NORM);
 
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::FireWait(void)
-{
-	SendWeaponAnim(BGRAP_FIREWAITING, UseDecrement());
+				if( pTarget->IsPlayer() )
+				{
+					EMIT_SOUND(ENT(pTarget->pev), CHAN_VOICE, "weapons/bgrapple_impact.wav", 0.98 , ATTN_NORM);
+				}
 
-	m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + RANDOM_FLOAT(15, 20);
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5f;
-}
+				m_bMomentaryStuck = FALSE;
+			}
 
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::FireReach(void)
-{
-	SendWeaponAnim(BGRAP_FIREREACHED, UseDecrement());
-	m_iFirestate = FIRESTATE_TRAVEL;
+			switch( m_pTip->GetGrappleType() )
+			{
+			case NOT_A_TARGET: break;
 
-	// Start pulling the owner toward tongue tip.
-	StartPull();
+			case SMALL:
+				//pTarget->BarnacleVictimGrabbed( this );
+				m_pTip->pev->origin = pTarget->Center();
 
-	m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + RANDOM_FLOAT(15, 20);
-	//m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 4.7;
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase();
-}
+				pTarget->pev->velocity = pTarget->pev->velocity + ( m_pPlayer->pev->origin - pTarget->pev->origin );
+				
+				if( pTarget->pev->velocity.Length() > 450.0 )
+				{
+					pTarget->pev->velocity = pTarget->pev->velocity.Normalize() * 450.0;
+				}
 
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::FireTravel(void)
-{
-	SendWeaponAnim(BGRAP_FIRETRAVEL, UseDecrement());
+				break;
 
-	m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + RANDOM_FLOAT(15, 20);
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.6f;
-}
+			case MEDIUM:
+			case LARGE:
+			case FIXED:
+				//pTarget->BarnacleVictimGrabbed( this );
 
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::FireRelease(void)
-{
-	// Stop pull sound.
-	// STOP_SOUND(ENT(pev), CHAN_VOICE, "weapons/bgrapple_pull.wav");
+				if( m_pTip->GetGrappleType() != FIXED )
+					UTIL_SetOrigin( m_pTip->pev, pTarget->Center() );
 
-	// Play release sound.
-	EMIT_SOUND(ENT(pev), CHAN_BODY, "weapons/bgrapple_release.wav", 1, ATTN_NORM);
+				m_pPlayer->pev->velocity =
+					m_pPlayer->pev->velocity + ( m_pTip->pev->origin - m_pPlayer->pev->origin );
 
-	SendWeaponAnim(BGRAP_FIRERELEASE, UseDecrement());
-	m_iFirestate = FIRESTATE_NONE;
-	// Stop the pulling.
-	StopPull();
+				if( m_pPlayer->pev->velocity.Length() > 450.0 )
+				{
+					m_pPlayer->pev->velocity = m_pPlayer->pev->velocity.Normalize() * 450.0;
+					
+					Vector vecPitch = UTIL_VecToAngles( m_pPlayer->pev->velocity );
 
-	// Reset pull sound.
-	ResetPullSound();
+					if( (vecPitch.x > 55.0 && vecPitch.x < 205.0) || vecPitch.x < -55.0 )
+					{
+						m_bGrappling = FALSE;
+						m_pPlayer->SetAnimation( PLAYER_IDLE );
+					}
+					else
+					{
+						m_bGrappling = TRUE;
+						m_pPlayer->SetAnimation( PLAYER_GRAPPLE );
+					}
+				}
+				else
+				{
+					m_bGrappling = FALSE;
+					m_pPlayer->SetAnimation( PLAYER_IDLE );
+				}
 
-	// Destroy the tongue tip.
-	DestroyTongueTip();
+				break;
+			}
+		}
 
-	m_fTipHit = FALSE;
-	m_iHitFlags = 0;
+		if( m_pTip->HasMissed() )
+		{
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/bgrapple_release.wav", 0.98 , ATTN_NORM);
 
-	m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75f;
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.1;
-}
+			EndAttack();
+			return;
+		}
+	}
 
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::OnTongueTipHitSurface(const Vector& vecTarget)
-{
+	if( m_FireState != OFF )
+	{
+		m_pPlayer->m_iWeaponVolume = 450;
+
+		if( m_flShootTime != 0.0 && gpGlobals->time > m_flShootTime )
+		{
+			SendWeaponAnim( BGRAPPLE_FIREWAITING );
+
+			Vector vecPunchAngle = m_pPlayer->pev->punchangle;
+
+			vecPunchAngle.x += 2.0;
+
+			m_pPlayer->pev->punchangle = vecPunchAngle;
+
+			Fire( m_pPlayer->GetGunPosition(), gpGlobals->v_forward );
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/bgrapple_pull.wav", 0.98 , ATTN_NORM);
+
+			m_flShootTime = 0;
+		}
+	}
+	else
+	{
+		m_bMomentaryStuck = TRUE;
+
+		SendWeaponAnim( BGRAPPLE_FIRE );
+
+		m_pPlayer->m_iWeaponVolume = 450;
+
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.1;
+
+		if( g_pGameRules->IsMultiplayer() )
+		{
+			m_flShootTime = gpGlobals->time;
+		}
+		else
+		{
+			m_flShootTime = gpGlobals->time + 0.35;
+		}
+
+		EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/bgrapple_fire.wav", 0.98 , ATTN_NORM);
+
+		m_FireState = CHARGE;
+	}
+
+	if( !m_pTip )
+	{
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.01;
+		return;
+	}
+
+	if( m_pTip->GetGrappleType() != FIXED && m_pTip->IsStuck() )
+	{
+		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+
+		Vector vecSrc = m_pPlayer->GetGunPosition();
+
+		Vector vecEnd = vecSrc + gpGlobals->v_forward * 16.0;
+
+		TraceResult tr;
+
+		UTIL_TraceLine( vecSrc, vecEnd, dont_ignore_monsters, m_pPlayer->edict(), &tr );
+
+		if( tr.flFraction >= 1.0 )
+		{
 #ifndef CLIENT_DLL
-	//ALERT(at_console, "Hit surface at: (%f,%f,%f).\n", vecTarget.x, vecTarget.y, vecTarget.z);
+			UTIL_TraceHull( vecSrc, vecEnd, dont_ignore_monsters, head_hull, m_pPlayer->edict(), &tr );
 #endif
-	FireReach();
-}
+			if( tr.flFraction < 1.0 )
+			{
+				CBaseEntity* pHit = Instance( tr.pHit );
+/*
+				if( !pHit )
+					pHit = CWorld::GetInstance();
 
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::OnTongueTipHitEntity(CBaseEntity* pEntity)
-{
+				if( !pHit )
+				{
+					FindHullIntersection( vecSrc, tr, VEC_DUCK_HULL_MIN, VEC_DUCK_HULL_MAX, m_pPlayer );
+				}
+*/
+			}
+		}
+
+		if( tr.flFraction < 1.0 )
+		{
+			CBaseEntity* pHit = Instance( tr.pHit );
+/*
+			if( !pHit )
+				pHit = CWorld::GetInstance();
+*/
+			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+
+			if( pHit )
+			{
+				if( m_pTip )
+				{
+					bool bValidTarget = FALSE;
+					if( pHit->IsPlayer() )
+					{
+						m_pTip->SetGrappleTarget( pHit );
+
+						bValidTarget = TRUE;
+					}
+					else if( m_pTip->CheckTarget( pHit ) != NOT_A_TARGET )
+					{
+						bValidTarget = TRUE;
+					}
+
+					if( bValidTarget )
+					{
+						if( m_flDamageTime + 0.5 < gpGlobals->time )
+						{
 #ifndef CLIENT_DLL
-	 //ALERT(at_console, "Hit entity with classname %s.\n", (char*)STRING(pEntity->pev->classname));
+							ClearMultiDamage();
+
+							float flDamage = gSkillData.plrDmgGrapple;
+
+							if( g_pGameRules->IsMultiplayer() )
+							{
+								flDamage *= 2;
+							}
+
+							pHit->TraceAttack( m_pPlayer->pev, flDamage, gpGlobals->v_forward, &tr, DMG_CLUB ); 
+	
+							ApplyMultiDamage( m_pPlayer->pev, m_pPlayer->pev );
 #endif
-	FireReach();
+
+							m_flDamageTime = gpGlobals->time;
+
+							const char* pszSample;
+
+							switch( RANDOM_LONG( 0, 2 ) )
+							{
+							default:
+							case 0: pszSample = "barnacle/bcl_chew1.wav"; break;
+							case 1: pszSample = "barnacle/bcl_chew2.wav"; break;
+							case 2: pszSample = "barnacle/bcl_chew3.wav"; break;
+							}
+							EMIT_SOUND(ENT(pev), CHAN_VOICE, pszSample, 0.98 , ATTN_NORM);						}
+					}
+				}
+			}
+		}
+	}
+
+	//TODO: CTF support - Solokiller
+	/*
+	if( g_pGameRules->IsMultiplayer() && g_pGameRules->IsCTF() )
+	{
+		m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase();
+	}
+	else
+	*/
+	{
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.01;
+		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
+	}
 }
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::StartPull(void)
+
+void CBarnacleGrapple::SecondaryAttack( void )
+{
+	if( m_pTip && m_pTip->IsStuck() && 
+		( !m_pTip->GetGrappleTarget() || m_pTip->GetGrappleTarget()->IsPlayer() ) )
+	{
+		EndAttack();
+	}
+	else
+	{
+		UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
+
+		m_pPlayer->pev->movetype = MOVETYPE_WALK;
+		//m_pPlayer->pev->flags =& ~PFLAG_LATCHING;
+	}
+}
+
+void CBarnacleGrapple::Fire( Vector vecOrigin, Vector vecDir )
 {
 #ifndef CLIENT_DLL
-	Vector vecOrigin = m_pPlayer->pev->origin;
+	Vector vecSrc = vecOrigin;
 
-	vecOrigin.z++;
-	UTIL_SetOrigin(m_pPlayer->pev, vecOrigin);
+	Vector vecEnd = vecSrc + vecDir * 2048.0;
 
-	m_pPlayer->pev->movetype = MOVETYPE_FLY;
-	m_pPlayer->pev->gravity = 0.0f;
+	TraceResult tr;
 
-	m_pPlayer->pev->flags &= ~FL_ONGROUND;
+	UTIL_TraceLine( vecSrc, vecEnd, dont_ignore_monsters, m_pPlayer->edict(), &tr );
 
-	m_pPlayer->m_afPhysicsFlags |= PFLAG_LATCHING;
+	if( !tr.fAllSolid )
+	{
+		CBaseEntity* pHit = Instance( tr.pHit );
+/*
+		if( !pHit )
+			pHit = CWorld::GetInstance();
+*/
+		if( pHit )
+		{
+			UpdateEffect();
+
+			m_flDamageTime = gpGlobals->time;
+		}
+	}
 #endif
 }
 
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::StopPull(void)
+void CBarnacleGrapple::EndAttack( void )
 {
-#ifndef CLIENT_DLL
+	m_FireState = OFF;
+	SendWeaponAnim( BGRAPPLE_FIREREACHED );
+
+	EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/bgrapple_release.wav", 1, ATTN_NORM);
+
+	STOP_SOUND( edict(), CHAN_VOICE, "weapons/bgrapple_pull.wav" );
+
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.8;
+
+	//TODO: CTF support - Solokiller
+	/*
+	if( g_pGameRules->IsMultiplayer() && g_pGameRules->IsCTF() )
+	{
+	m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase();
+	}
+	else
+	*/
+	{
+		m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.01;
+	}
+
+	DestroyEffect();
+
+	if( m_bGrappling && m_pPlayer->IsAlive() )
+	{
+		m_pPlayer->SetAnimation( PLAYER_IDLE );
+	}
+
 	m_pPlayer->pev->movetype = MOVETYPE_WALK;
-	m_pPlayer->pev->gravity = 1.0f;
-
-	m_pPlayer->m_afPhysicsFlags &= ~PFLAG_LATCHING;
-#endif
+	//m_pPlayer->pev->flags =& ~PFLAG_LATCHING;
 }
 
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::Pull( void )
+void CBarnacleGrapple::CreateEffect( void )
 {
 #ifndef CLIENT_DLL
-	Vector vecOwnerPos, vecTipPos, vecDirToTip;
-	vecOwnerPos = m_pPlayer->pev->origin;
-	vecTipPos = m_pTongueTip->Center();
-	vecDirToTip = (vecTipPos - vecOwnerPos).Normalize();
+	DestroyEffect();
 
-	m_pPlayer->pev->velocity = vecDirToTip * 550;
+	m_pTip = GetClassPtr((CBarnacleGrappleTip *)NULL);
+	m_pTip->Spawn();
 
-	m_pPlayer->m_afPhysicsFlags |= PFLAG_LATCHING;
-#endif
-}
-
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::CreateTongueTip( void )
-{
-#ifndef CLIENT_DLL
-	Vector vecSrc, vecAiming, vecVel;
 	UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 
-	vecSrc = m_pPlayer->GetGunPosition();
-	vecSrc = vecSrc + gpGlobals->v_forward * 8;
-	vecSrc = vecSrc + gpGlobals->v_right * 3;
-	vecSrc = vecSrc + gpGlobals->v_up * -3;
+	Vector vecOrigin = 
+		m_pPlayer->GetGunPosition() + 
+		gpGlobals->v_forward * 16.0 + 
+		gpGlobals->v_right * 8.0 + 
+		gpGlobals->v_up * -8.0;
 
-	vecVel = gpGlobals->v_forward * 1800;
+	Vector vecAngles = m_pPlayer->pev->v_angle;
 
-	//GetAttachment(0, vecSrc, vecAiming);
+	vecAngles.x = -vecAngles.x;
 
-	m_pTongueTip = CGrappleTonguetip::CreateTip(pev, vecSrc, vecVel);
-	CreateBeam(m_pTongueTip);
-#endif
+	m_pTip->SetPosition( vecOrigin, vecAngles, m_pPlayer );
 
-}
-
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::DestroyTongueTip(void)
-{
-#ifndef CLIENT_DLL
-	DestroyBeam();
-	checkTarg = 0;
-	if (m_pTongueTip)
+	if( !m_pBeam )
 	{
-		UTIL_Remove(m_pTongueTip);
-		m_pTongueTip = NULL;
-	}
-#endif
-}
+		m_pBeam = CBeam::BeamCreate( "sprites/tongue.spr", 16 );
 
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::UpdateTongueTip(void)
-{
-#ifndef CLIENT_DLL
-	if (m_pTongueTip)
-	{
-		Vector tipVel = m_pTongueTip->pev->velocity;
-		Vector ownerVel = VARS(pev->owner)->velocity;
+		m_pBeam->EntsInit( m_pTip->entindex(), m_pPlayer->entindex() );
 
-		Vector newVel;
-
-		newVel.x = tipVel.x + (ownerVel.x * 0.02f);
-		newVel.y = tipVel.y + (ownerVel.y * 0.05f);
-		newVel.z = tipVel.z + (ownerVel.z * 0.01f);
-
-		m_pTongueTip->pev->velocity = newVel;
-	}
-#endif
-}
-
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::CreateBeam( CBaseEntity* pTongueTip )
-{
-#ifndef CLIENT_DLL
-	m_pBeam = CBeam::BeamCreate("sprites/tongue.spr", 8);
-
-	if (m_pBeam)
-	{
-		m_pBeam->PointsInit(pTongueTip->pev->origin, pev->origin);
 		m_pBeam->SetFlags( BEAM_FSOLID );
+
 		m_pBeam->SetBrightness( 100.0 );
 
 		m_pBeam->SetEndAttachment( 1 );
+
 		m_pBeam->pev->spawnflags |= SF_BEAM_TEMPORARY;
 	}
 #endif
 }
 
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::DestroyBeam(void)
+void CBarnacleGrapple::UpdateEffect( void )
 {
 #ifndef CLIENT_DLL
-	if (m_pBeam)
+	if( !m_pBeam || !m_pTip )
+		CreateEffect();
+#endif
+}
+
+void CBarnacleGrapple::DestroyEffect( void )
+{
+	if( m_pBeam )
 	{
-		UTIL_Remove(m_pBeam);
+		UTIL_Remove( m_pBeam );
 		m_pBeam = NULL;
 	}
-#endif
-}
 
-//=========================================================
-// Purpose:
-//=========================================================
-void CGrapple::UpdateBeam(void)
-{
-#ifndef CLIENT_DLL
-	if (m_pBeam)
+	if( m_pTip )
 	{
-		Vector vecSrc;
-		UTIL_MakeVectors(m_pPlayer->pev->v_angle);
-
-		vecSrc = m_pPlayer->GetGunPosition();
-		vecSrc = vecSrc + gpGlobals->v_forward * 16;
-		vecSrc = vecSrc + gpGlobals->v_right * 6;
-		vecSrc = vecSrc + gpGlobals->v_up * -8;
-		m_pBeam->SetStartPos(vecSrc);
-		m_pBeam->SetEndPos(m_pTongueTip->pev->origin);
-		m_pBeam->RelinkBeam();
+		m_pTip->Killed( NULL, GIB_NEVER );
+		m_pTip = NULL;
 	}
-#endif
-}
-
-//=========================================================
-// Purpose:
-//=========================================================
-BOOL CGrapple::CanAttack(float attack_time, float curtime, BOOL isPredicted)
-{
-#if defined( CLIENT_WEAPONS )
-	if (!isPredicted)
-#else
-	if (1)
-#endif
-	{
-		return (attack_time <= curtime) ? TRUE : FALSE;
-	}
-	else
-	{
-		return (attack_time <= 0.0) ? TRUE : FALSE;
-	}
-}
-
-
-void CGrapple::StartPullSound(void)
-{
-	m_flNextPullSoundTime = UTIL_WeaponTimeBase();
-	m_fPlayPullSound = TRUE;
-}
-
-void CGrapple::UpdatePullSound(void)
-{
-	if (!m_fPlayPullSound)
-		return;
-
-	if (m_flNextPullSoundTime <= UTIL_WeaponTimeBase())
-	{
-		EMIT_SOUND(ENT(pev), CHAN_BODY, "weapons/bgrapple_pull.wav", 1, ATTN_NORM);
-		m_flNextPullSoundTime = UTIL_WeaponTimeBase() + 0.6f;
-	}
-}
-
-void CGrapple::ResetPullSound(void)
-{
-	STOP_SOUND(ENT(pev), CHAN_BODY, "weapons/bgrapple_pull.wav");
-	m_flNextPullSoundTime = 0.0f;
-	m_fPlayPullSound = FALSE;
-}
-
-void CGrapple::CheckTargets( void )
-{//If the target isn't monster or xeno_grapple
-	if( checkTarg == 1)
-	{
-		EMIT_SOUND(ENT(pev), CHAN_BODY, "weapons/bgrapple_impact.wav", 1, ATTN_NORM);
-		DestroyTongueTip();
-		Fire2();
-	}
-}
-
-BOOL CGrapple::IsTongueColliding(const Vector& vecShootOrigin, const Vector& vecTipPos)
-{
-#ifndef CLIENT_DLL
-	TraceResult tr;
-	UTIL_TraceLine(vecShootOrigin, vecTipPos, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr);
-
-	if (tr.flFraction != 1.0)
-	{
-		if (m_pTongueTip->pev->movetype == MOVETYPE_FOLLOW)
-		{
-			if (tr.pHit && m_pTongueTip->pev->aiment && m_pTongueTip->pev->aiment == tr.pHit)
-				return FALSE;
-		}
-
-		return TRUE;
-	}
-
-	return FALSE;
-#else
-	return TRUE;
-#endif
-}
-
-void CGrapple::CheckFireEligibility(void)
-{
-#ifndef CLIENT_DLL
-	// Do not check for this if the tongue is not valid.
-	if (!m_pTongueTip)
-		return;
-
-	// Check if the tongue is through walls or if other things
-	// such as entities are between the owner and the tip.
-	if (IsTongueColliding(m_pPlayer->GetGunPosition(), m_pTongueTip->pev->origin))
-	{
-		// Stop firing!
-		//FireRelease();
-	}
-#endif
-}
-
-
-BOOL CGrapple::CheckTargetProximity(void)
-{
-#ifndef CLIENT_DLL
-	// Do not check for this if the tongue is not valid.
-	if (!m_pTongueTip)
-		return FALSE;
-
-		// Trace a hull around to see if we hit something within 20 units.
-		TraceResult tr;
-		UTIL_TraceHull(
-			pev->origin,
-			pev->origin + VARS(pev->owner)->velocity.Normalize() * 20,
-			dont_ignore_monsters,
-			head_hull,
-			edict(),
-			&tr);
-
-		CBaseEntity *pEnt = CBaseEntity::Instance( tr.pHit );
-		// Check to see if we are close enough to our target.
-		// In the case o a monster, attempt to get a pointer to
-		// the entity, gib it, release grappler fire.
-		edict_t* pHit = ENT(tr.pHit);
-		//CBaseEntity* pEnt = GetClassPtr((CBaseEntity*)VARS(tr.pHit));
-		
-		if(m_pTongueTip->pev->aiment == tr.pHit && (pEnt->pev->flags & FL_MONSTER))
-		{
-			if(timer <= gpGlobals->time)
-			{
-				//ALERT(at_console, "Attack\n");
-				UTIL_MakeVectors( m_pPlayer->pev->v_angle );
-				float flDamage = gSkillData.plrDmgGrapple;
-
-				if(g_pGameRules->IsMultiplayer())
-					flDamage *= 2;
-
-				ClearMultiDamage();
-				   pEnt->TraceAttack( m_pPlayer->pev, flDamage, gpGlobals->v_forward, &tr, DMG_CLUB | DMG_ALWAYSGIB );
-				ApplyMultiDamage( pev, m_pPlayer->pev );
-				timer = gpGlobals->time + 0.6;
-				if(!pEnt->IsAlive() && pEnt->IsMonster())
-					deadflag = 1;
-			}
-		}
-#endif
-	return FALSE;
 }
