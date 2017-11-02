@@ -17,7 +17,7 @@
 #define SPORE_GRENADE_H
 
 
-class CSpore : public CBaseMonster
+class CSpore : public CBaseEntity
 {
 public:
 	void Spawn( void );
@@ -26,17 +26,17 @@ public:
 	void Explode( void );
 	void BounceSound( void );
 	void EXPORT ExplodeTouch( CBaseEntity *pOther );
-	void EXPORT BounceThink( CBaseEntity *pOther );
+	void EXPORT BounceTouch( CBaseEntity *pOther );
 	void EXPORT FlyThink( void );
 	static CSpore *CreateSporeRocket( Vector vecOrigin, Vector vecAngles, CBaseEntity *pOwner );
-	static CSpore *CreateSporeGrenade( Vector vecOrigin, Vector vecAngles, CBaseEntity *pOwner );
+	static CSpore *CreateSporeGrenade( Vector vecOrigin, Vector vecAngles, CBaseEntity *pOwner, bool m_bIsAI );
 
 	float m_iDrips;
 	float m_iGlow;
 	float m_iExplode;
 	float m_iExplodeC;
 	int m_iPrimaryMode;
-
+	bool m_bIsAI;
 	CSprite *m_pSprite;
 };
 

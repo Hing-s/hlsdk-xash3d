@@ -264,7 +264,7 @@ void CBlowerCannon::BlowerCannonThink( void )
 		}
 		else if( m_iWeapType == 2 )//spore grenade
 		{
-			CSpore *pSpore = CSpore::CreateSporeGrenade( pev->origin, angles, this );
+			CSpore *pSpore = CSpore::CreateSporeGrenade( pev->origin, angles, this, FALSE );
 			pSpore->pev->velocity = pSpore->pev->velocity + gpGlobals->v_forward * 700;
 		}
 		else if( m_iWeapType == 3 )//shock beam

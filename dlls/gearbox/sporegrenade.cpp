@@ -28,7 +28,8 @@
 #include "gearbox_weapons.h"
 
 LINK_ENTITY_TO_CLASS( spore, CSpore );
-CSpore *CSpore::CreateSporeGrenade( Vector vecOrigin, Vector vecAngles, CBaseEntity *pOwner )
+
+CSpore *CSpore::CreateSporeGrenade( Vector vecOrigin, Vector vecAngles, CBaseEntity *pOwner, bool m_bIsAI )
 {
 	CSpore *pSpore = GetClassPtr( (CSpore *)NULL );
 	UTIL_SetOrigin( pSpore->pev, vecOrigin );
@@ -37,6 +38,7 @@ CSpore *CSpore::CreateSporeGrenade( Vector vecOrigin, Vector vecAngles, CBaseEnt
 	pSpore->pev->angles = vecAngles;
 	pSpore->pev->owner = pOwner->edict();
 	pSpore->pev->classname = MAKE_STRING("spore");
+	pSpore->m_bIsAI = m_bIsAI;
 	pSpore->Spawn();
 
 	return pSpore;
@@ -64,7 +66,7 @@ CSpore *CSpore::CreateSporeRocket( Vector vecOrigin, Vector vecAngles, CBaseEnti
 void CSpore :: Spawn( void )
 {
 	Precache( );
-	// motor
+
 	if (m_iPrimaryMode)
 		pev->movetype = MOVETYPE_FLY;
 	else
@@ -73,27 +75,21 @@ void CSpore :: Spawn( void )
 	pev->solid = SOLID_BBOX;
 
 	SET_MODEL(ENT(pev), "models/spore.mdl");
-	UTIL_SetSize(pev, Vector( -4, -4, -4), Vector(4, 4, 4));
+	UTIL_SetSize(pev, Vector( 0, 0, 0), Vector(0, 0, 0));
 	UTIL_SetOrigin( pev, pev->origin );
 	UTIL_MakeVectors( pev->angles );
 
 	pev->gravity = 0.5;
-	Glow ();
-
+	Glow();
 
 	if (m_iPrimaryMode)
-	{
-		SetThink( &CSpore::FlyThink );
 		SetTouch( &CSpore::ExplodeTouch );
-		pev->velocity = gpGlobals->v_forward * 250;
-	}
 	else
-	{
-		SetThink( &CSpore::FlyThink );
-		SetTouch( &CSpore::BounceThink );
-	}
+		SetTouch( &CSpore::BounceTouch );
 
-	pev->dmgtime = gpGlobals->time + 2;
+	SetThink( &CSpore::FlyThink );
+	float flDelay = m_bIsAI ? 4.0 : 2.0;
+	pev->dmgtime = gpGlobals->time + flDelay;
 	pev->nextthink = gpGlobals->time + 0.1;
 
 	pev->dmg = gSkillData.plrDmgSpore;
@@ -148,18 +144,17 @@ void CSpore :: FlyThink( void  )
 	if (!m_iPrimaryMode)
 	{
 		if (pev->dmgtime <= gpGlobals->time)
-			Explode ();
+			Explode();
 	}
 }
 //=========================================================
 
-void CSpore::BounceThink(  CBaseEntity *pOther  )
+void CSpore::BounceTouch( CBaseEntity *pOther )
 {
-	if ( pOther->pev->flags & FL_MONSTER || pOther->IsPlayer()  )
+	if ( pOther->pev->flags & ( FL_MONSTER | FL_CLIENT ) )
 	{
-		if ( !FClassnameIs( pOther->pev, "monster_maria" ) 
-			&& !FClassnameIs( pOther->pev, "monster_boris" ) )
 		Explode();
+		return;
 	}
 
 	if ( UTIL_PointContents(pev->origin) == CONTENT_SKY )
@@ -169,35 +164,15 @@ void CSpore::BounceThink(  CBaseEntity *pOther  )
 		return;
 	}
 
-#ifndef CLIENT_DLL
-	// only do damage if we're moving fairly fast
-	if (m_flNextAttack < gpGlobals->time && pev->velocity.Length() > 100)
-	{
-		entvars_t *pevOwner = VARS( pev->owner );
-		if (pevOwner)
-		{
-			TraceResult tr = UTIL_GetGlobalTrace( );
-			ClearMultiDamage( );
-			pOther->TraceAttack(pevOwner, 1, gpGlobals->v_forward, &tr, DMG_GENERIC ); 
-			ApplyMultiDamage( pev, pevOwner);
-		}
-		m_flNextAttack = gpGlobals->time + 1.0; // debounce
-	}
-#endif
-
-	Vector vecTestVelocity;
-
-	vecTestVelocity = pev->velocity; 
-	vecTestVelocity.z *= 0.45;
-
 	if (pev->flags & FL_ONGROUND)
 	{
 		// add a bit of static friction
-		pev->velocity = pev->velocity * 0.8;
+		pev->velocity = pev->velocity * 0.7;
 
 		pev->sequence = RANDOM_LONG( 1, 1 );
 	}
-	else if( pev->flags & FL_SWIM )
+
+	if( pev->flags & FL_SWIM )
 	{
 		pev->velocity = pev->velocity * 0.5;
 	}
@@ -206,6 +181,7 @@ void CSpore::BounceThink(  CBaseEntity *pOther  )
 		// play bounce sound
 		BounceSound();
 	}
+
 	pev->framerate = pev->velocity.Length() / 200.0;
 	if (pev->framerate > 1.0)
 		pev->framerate = 1;
@@ -219,9 +195,15 @@ void CSpore :: BounceSound( void )
 {
 	switch (RANDOM_LONG (0, 2))
 	{
-	case 0: EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/spore_hit1.wav", 0.25, ATTN_NORM); break;
-	case 1: EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/spore_hit2.wav", 0.25, ATTN_NORM); break;
-	case 2: EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/spore_hit3.wav", 0.25, ATTN_NORM); break;
+		case 0: 
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/spore_hit1.wav", 0.25, ATTN_NORM); 
+			break;
+		case 1: 
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/spore_hit2.wav", 0.25, ATTN_NORM); 
+			break;
+		case 2: 
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/spore_hit3.wav", 0.25, ATTN_NORM); 
+			break;
 	}
 }
 //=========================================================
@@ -234,8 +216,7 @@ void CSpore::ExplodeTouch( CBaseEntity *pOther )
 		UTIL_Remove( this );
 		return;
 	}
-	if ( !FClassnameIs( pOther->pev, "monster_maria" ) && !FClassnameIs( pOther->pev, "monster_boris" ) )
-		Explode();
+	Explode();
 }
 //=========================================================
 
@@ -292,16 +273,27 @@ void CSpore::Explode( void )
 		WRITE_BYTE( 10 );		// decay * 0.1
 	MESSAGE_END( );
 
+	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+		WRITE_BYTE( TE_SPRITE_SPRAY );
+		WRITE_COORD( pev->origin.x );
+		WRITE_COORD( pev->origin.y );
+		WRITE_COORD( pev->origin.z );
+		WRITE_COORD( RANDOM_FLOAT( -1, 1 ) );
+		WRITE_COORD( 1 );
+		WRITE_COORD( RANDOM_FLOAT( -1, 1 ) );
+		WRITE_SHORT( m_iDrips );
+		WRITE_BYTE( 2 );
+		WRITE_BYTE( 20 );
+		WRITE_BYTE( 80 );
+	MESSAGE_END();
+
     	entvars_t *pevOwner;
 	if ( pev->owner )
 		pevOwner = VARS( pev->owner );
 	else
 		pevOwner = NULL;
 
-	pev->owner = NULL; // can't traceline attack owner if this is set
-
-
-	::RadiusDamage ( pev->origin, pev, pevOwner, pev->dmg, 128, CLASS_PLAYER_BIOWEAPON, DMG_GENERIC );
+	::RadiusDamage ( pev->origin, pev, pevOwner, pev->dmg, 200, CLASS_PLAYER_BIOWEAPON, DMG_GENERIC );
 
 	if (m_iPrimaryMode)
 	{

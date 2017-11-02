@@ -61,7 +61,7 @@ public:
 #define ITEM_SECURITY		3
 #define ITEM_BATTERY		4
 
-#define WEAPON_NONE				0
+#define WEAPON_NONE			0
 #define WEAPON_CROWBAR			1
 #define	WEAPON_GLOCK			2
 #define WEAPON_PYTHON			3
@@ -71,13 +71,13 @@ public:
 #define WEAPON_SHOTGUN			7
 #define WEAPON_RPG				8
 #define WEAPON_GAUSS			9
-#define WEAPON_EGON				10
+#define WEAPON_EGON			10
 #define WEAPON_HORNETGUN		11
 #define WEAPON_HANDGRENADE		12
 #define WEAPON_TRIPMINE			13
 #define	WEAPON_SATCHEL			14
 #define	WEAPON_SNARK			15
-#define WEAPON_DISPLACER		16
+#define WEAPON_DISPLACER			16
 #define WEAPON_EAGLE			17
 #define WEAPON_GRAPPLE			18
 #define WEAPON_KNIFE			19
@@ -90,35 +90,35 @@ public:
 
 #define WEAPON_ALLWEAPONS		(~(1<<WEAPON_SUIT))
 
-#define WEAPON_SUIT				31	// ?????
+#define WEAPON_SUIT			31	// ?????
 
 #define MAX_WEAPONS			32
 
-#define MAX_NORMAL_BATTERY	100
+#define MAX_NORMAL_BATTERY		100
 
 // weapon weight factors (for auto-switching)   (-1 = noswitch)
-#define CROWBAR_WEIGHT		0
-#define GLOCK_WEIGHT		10
-#define PYTHON_WEIGHT		15
-#define MP5_WEIGHT			15
-#define SHOTGUN_WEIGHT		15
-#define CROSSBOW_WEIGHT		10
-#define RPG_WEIGHT			20
-#define GAUSS_WEIGHT		20
+#define CROWBAR_WEIGHT			0
+#define GLOCK_WEIGHT			10
+#define PYTHON_WEIGHT			15
+#define MP5_WEIGHT				15
+#define SHOTGUN_WEIGHT			15
+#define CROSSBOW_WEIGHT			10
+#define RPG_WEIGHT				20
+#define GAUSS_WEIGHT			20
 #define EGON_WEIGHT			20
-#define HORNETGUN_WEIGHT	10
-#define HANDGRENADE_WEIGHT	5
-#define SNARK_WEIGHT		5
-#define SATCHEL_WEIGHT		-10
-#define TRIPMINE_WEIGHT		-10
-#define DISPLACER_WEIGHT		20
+#define HORNETGUN_WEIGHT		10
+#define HANDGRENADE_WEIGHT		5
+#define SNARK_WEIGHT			5
+#define SATCHEL_WEIGHT			-10
+#define TRIPMINE_WEIGHT			-10
+#define DISPLACER_WEIGHT			20
 #define EAGLE_WEIGHT			15
 #define GRAPPLE_WEIGHT			0
 #define KNIFE_WEIGHT			0
 #define M249_WEIGHT			15
 #define PENGUIN_WEIGHT			5
 #define PIPEWRENCH_WEIGHT		0
-#define SHOCKRIFLE_WEIGHT		10
+#define SHOCKRIFLE_WEIGHT			10
 #define SNIPERRIFLE_WEIGHT		10
 #define SPORELAUNCHER_WEIGHT		10
 
@@ -128,8 +128,8 @@ public:
 #define _357_MAX_CARRY			36
 #define BUCKSHOT_MAX_CARRY		125
 #define BOLT_MAX_CARRY			50
-#define ROCKET_MAX_CARRY		5
-#define HANDGRENADE_MAX_CARRY	10
+#define ROCKET_MAX_CARRY			5
+#define HANDGRENADE_MAX_CARRY		10
 #define SATCHEL_MAX_CARRY		5
 #define TRIPMINE_MAX_CARRY		5
 #define SNARK_MAX_CARRY			15
@@ -148,61 +148,62 @@ public:
 #define GLOCK_MAX_CLIP			17
 #define PYTHON_MAX_CLIP			6
 #define MP5_MAX_CLIP			50
-#define MP5_DEFAULT_AMMO		25
-#define SHOTGUN_MAX_CLIP		8
+#define MP5_DEFAULT_AMMO			25
+#define SHOTGUN_MAX_CLIP			8
 #define CROSSBOW_MAX_CLIP		5
 #define RPG_MAX_CLIP			1
 #define GAUSS_MAX_CLIP			WEAPON_NOCLIP
 #define EGON_MAX_CLIP			WEAPON_NOCLIP
 #define HORNETGUN_MAX_CLIP		WEAPON_NOCLIP
-#define HANDGRENADE_MAX_CLIP	WEAPON_NOCLIP
-#define SATCHEL_MAX_CLIP		WEAPON_NOCLIP
-#define TRIPMINE_MAX_CLIP		WEAPON_NOCLIP
+#define HANDGRENADE_MAX_CLIP		WEAPON_NOCLIP
+#define SATCHEL_MAX_CLIP			WEAPON_NOCLIP
+#define TRIPMINE_MAX_CLIP			WEAPON_NOCLIP
 #define SNARK_MAX_CLIP			WEAPON_NOCLIP
 #define EAGLE_MAX_CLIP			7
 #define M249_MAX_CLIP			50
-#define PENGUIN_MAX_CLIP		WEAPON_NOCLIP
+#define PENGUIN_MAX_CLIP			WEAPON_NOCLIP
 #define SHOCKRIFLE_MAX_CLIP		10
 #define SNIPERRIFLE_MAX_CLIP		5
 #define SPORELAUNCHER_MAX_CLIP		5
 
 // the default amount of ammo that comes with each gun when it spawns
-#define GLOCK_DEFAULT_GIVE			17
-#define PYTHON_DEFAULT_GIVE			6
+#define GLOCK_DEFAULT_GIVE		17
+#define PYTHON_DEFAULT_GIVE		6
 #define MP5_DEFAULT_GIVE			25
 #define MP5_DEFAULT_AMMO			25
 #define MP5_M203_DEFAULT_GIVE		0
 #define SHOTGUN_DEFAULT_GIVE		12
 #define CROSSBOW_DEFAULT_GIVE		5
 #define RPG_DEFAULT_GIVE			1
-#define GAUSS_DEFAULT_GIVE			20
+#define GAUSS_DEFAULT_GIVE		20
 #define EGON_DEFAULT_GIVE			20
 #define HANDGRENADE_DEFAULT_GIVE	5
 #define SATCHEL_DEFAULT_GIVE		1
 #define TRIPMINE_DEFAULT_GIVE		1
-#define SNARK_DEFAULT_GIVE			5
+#define SNARK_DEFAULT_GIVE		5
 #define HIVEHAND_DEFAULT_GIVE		8
 #define EAGLE_DEFAULT_GIVE			7
 #define M249_DEFAULT_GIVE			50
-#define PENGUIN_DEFAULT_GIVE			3
-#define SHOCKRIFLE_DEFAULT_GIVE			10
+#define PENGUIN_DEFAULT_GIVE		3
+#define SHOCKRIFLE_DEFAULT_GIVE		10
 #define SNIPERRIFLE_DEFAULT_GIVE		5
-#define SPORELAUNCHER_DEFAULT_GIVE		5
+#define SPORELAUNCHER_DEFAULT_GIVE	5
+#define DISPLACER_DEFAULT_GIVE		40
 
 // The amount of ammo given to a player by an ammo item.
-#define AMMO_URANIUMBOX_GIVE	20
+#define AMMO_URANIUMBOX_GIVE		20
 #define AMMO_GLOCKCLIP_GIVE		GLOCK_MAX_CLIP
-#define AMMO_357BOX_GIVE		PYTHON_MAX_CLIP
+#define AMMO_357BOX_GIVE			PYTHON_MAX_CLIP
 #define AMMO_MP5CLIP_GIVE		MP5_MAX_CLIP
 #define AMMO_CHAINBOX_GIVE		200
 #define AMMO_M203BOX_GIVE		2
-#define AMMO_BUCKSHOTBOX_GIVE	12
-#define AMMO_CROSSBOWCLIP_GIVE	CROSSBOW_MAX_CLIP
-#define AMMO_RPGCLIP_GIVE		RPG_MAX_CLIP
-#define AMMO_URANIUMBOX_GIVE	20
+#define AMMO_BUCKSHOTBOX_GIVE		12
+#define AMMO_CROSSBOWCLIP_GIVE		CROSSBOW_MAX_CLIP
+#define AMMO_RPGCLIP_GIVE			RPG_MAX_CLIP
+#define AMMO_URANIUMBOX_GIVE		20
 #define AMMO_SNARKBOX_GIVE		5
-#define AMMO_556CLIP_GIVE		50
-#define AMMO_762BOX_GIVE		5
+#define AMMO_556CLIP_GIVE			50
+#define AMMO_762BOX_GIVE			5
 #define AMMO_PENGUINBOX_GIVE		3
 #define AMMO_SPORE_GIVE			1
 
@@ -1041,7 +1042,7 @@ private:
 };
 
 //
-//
+//Displacer
 //
 class CDisplacer : public CBasePlayerWeapon
 {
@@ -1074,28 +1075,20 @@ public:
 #endif
 	}
 
-	int		m_iFireState;
 	int		m_iFireMode;
-	int		m_iBeam;
-	CBeam *m_pBeam;
+
 	CBaseEntity* m_hTargetEarth;
 	CBaseEntity* m_hTargetXen;
 
-	BOOL HasAmmo(void);
 	void UseAmmo(int count);
-	BOOL CanFireDisplacer() const;
-	BOOL CanFireDisplacer2() const;
+	BOOL CanFireDisplacer( int count ) const;
 
-	enum DISPLACER_FIRESTATE { FIRESTATE_NONE = 0, FIRESTATE_SPINUP, FIRESTATE_FIRE };
-	enum DISPLACER_FIREMODE { FIREMODE_NONE = 0, FIREMODE_FORWARD, FIREMODE_BACKWARD };
-
+	enum DISPLACER_FIREMODE { FIREMODE_FORWARD = 1, FIREMODE_BACKWARD };
 private:
 	void ClearSpin( void );
-	void SpinUp(int iFireMode);
-	void Fire( BOOL fIsPrimary );
+	void SpinUp( void );
 	void Teleport( void );
 	void Displace( void );
-	void CreateEffects( void );
 
 private:
 	unsigned short m_usDisplacer;
@@ -1180,18 +1173,11 @@ public:
 
 	int iItemSlot( void ) { return 1; }
 	int GetItemInfo(ItemInfo *p);
-
 	int AddToPlayer( CBasePlayer* pPlayer );
-
 	BOOL Deploy();
-
 	void Holster( int skiplocal /* = 0 */ );
-
 	void WeaponIdle( void );
-
 	void PrimaryAttack( void );
-
-	void SecondaryAttack( void );
 
 	void Fire( Vector vecOrigin, Vector vecDir );
 
@@ -1217,9 +1203,7 @@ private:
 	FireState m_FireState;
 
 	bool m_bGrappling;
-
 	bool m_bMissed;
-
 	bool m_bMomentaryStuck;
 };
 
@@ -1402,17 +1386,9 @@ public:
 	CBaseEntity *pShockedEnt;
 };
 
-
 class CShockrifle : public CHgun
 {
 public:
-
-#ifndef CLIENT_DLL
-	int		Save(CSave &save);
-	int		Restore(CRestore &restore);
-	static	TYPEDESCRIPTION m_SaveData[];
-#endif
-
 	void Spawn(void);
 	void Precache(void);
 	int iItemSlot(void) { return 7; }
@@ -1420,17 +1396,10 @@ public:
 	int AddToPlayer(CBasePlayer *pPlayer);
 
 	void PrimaryAttack(void);
-	void SecondaryAttack(void);
 	BOOL Deploy(void);
 	void Holster(int skiplocal = 0);
 	void Reload(void);
 	void WeaponIdle(void);
-	void ItemPostFrame(void);;
-
-	int m_fShouldUpdateEffects;
-	int m_flBeamLifeTime;
-
-	void UpdateEffects();
 	
 	virtual BOOL UseDecrement(void)
 	{
@@ -1488,7 +1457,6 @@ public:
 private:
 	unsigned short m_usSniper;
 };
-#define MAX_PORTAL_BEAMS 5
 
 class CPortal : public CBaseEntity
 {
@@ -1499,21 +1467,21 @@ public:
 	static void SelfCreate(entvars_t *pevOwner, Vector vecStart);
 
 	void Touch(CBaseEntity *pOther);
-	void EXPORT Animate(void);
 	void EXPORT ExplodeThink( void );
 	void Circle( void );
-
 
 	virtual int		Save(CSave &save);
 	virtual int		Restore(CRestore &restore);
 	static	TYPEDESCRIPTION m_SaveData[];
 
-	int  m_maxFrame;
-	CBeam* m_pBeam[MAX_PORTAL_BEAMS];
+	CBeam* m_pBeam[8];
 
-	void CreateBeams();
-	void ClearBeams();
-	void UpdateBeams();
+	void FlyThink( void );
+	void ClearBeams( void );
+	void ArmBeam( int iSide );
+
+	int m_iBeams;
+
 	CBaseEntity *pRemoveEnt;
 };
 

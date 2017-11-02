@@ -102,7 +102,7 @@ void CShock::FlyThink()
 		entvars_t *pevOwner = VARS(pev->owner);
 		const int iVolume = RANDOM_FLOAT(0.8f, 1);
 		const int iPitch = RANDOM_FLOAT(80, 110);
-		EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "weapons/shock_impact.wav", iVolume, ATTN_NORM, 0, iPitch);
+		EMIT_SOUND(ENT(pev), CHAN_BODY, "weapons/shock_impact.wav", VOL_NORM, ATTN_NORM);
 		RadiusDamage(pev->origin, pev, pevOwner ? pevOwner : pev, pev->dmg * 3, 144, CLASS_NONE, DMG_SHOCK | DMG_ALWAYSGIB );
 		ClearEffects();
 		SetThink( &CBaseEntity::SUB_Remove );
@@ -157,6 +157,8 @@ void CShock::Touch(CBaseEntity *pOther)
 		WRITE_BYTE( 10 );		// time * 10
 		WRITE_BYTE( 10 );		// decay * 0.1
 	MESSAGE_END( );
+
+	EMIT_SOUND(ENT(pev), CHAN_BODY, "weapons/shock_impact.wav", VOL_NORM, ATTN_NORM);
 
 	ClearEffects();
 	if (!pOther->pev->takedamage)
