@@ -597,6 +597,16 @@ void CDisplacer::Teleport( void )
 
 	if(pTarget && /*HACK*/(tmp != Vector(0,0,0)/*HACK*/))
 	{
+#ifndef CLIENT_DLL
+		if( m_pPlayer->IsOnRope() )
+		{
+			m_pPlayer->pev->movetype = MOVETYPE_WALK;
+			m_pPlayer->pev->solid = SOLID_SLIDEBOX;
+			m_pPlayer->SetOnRopeState( false );
+			m_pPlayer->GetRope()->DetachObject();
+			m_pPlayer->SetRope( NULL );
+		}
+#endif		
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase();
 
 		UseAmmo(DISPLACER_SECONDARY_USAGE);

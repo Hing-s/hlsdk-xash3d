@@ -359,6 +359,12 @@ public:
 	CRope *m_pRope;
 	bool m_bIsClimbing;
 	float m_flLastClimbTime;
+
+	BOOL IsOnRope()
+	{ 
+		return ( m_afPhysicsFlags & PFLAG_ONROPE ) != 0; 
+	}
+
 	void *SetRope( CBaseEntity *pRope )
 	{
 		m_pRope = (CRope*)pRope;
@@ -371,7 +377,7 @@ public:
 		m_afPhysicsFlags &= ~PFLAG_ONROPE;
 
 	}
-
+	CRope* GetRope() { return m_pRope; }
 
 	void Service_Grapple( void );
 };
