@@ -103,7 +103,7 @@ void CShock::FlyThink()
 		const int iVolume = RANDOM_FLOAT(0.8f, 1);
 		const int iPitch = RANDOM_FLOAT(80, 110);
 		EMIT_SOUND(ENT(pev), CHAN_BODY, "weapons/shock_impact.wav", VOL_NORM, ATTN_NORM);
-		RadiusDamage(pev->origin, pev, pevOwner ? pevOwner : pev, pev->dmg * 3, 144, CLASS_NONE, DMG_SHOCK | DMG_ALWAYSGIB );
+		RadiusDamage(pev->origin, pev, pevOwner ? pevOwner : pev, 100, 150, CLASS_NONE, DMG_SHOCK | DMG_ALWAYSGIB );
 		ClearEffects();
 		SetThink( &CBaseEntity::SUB_Remove );
 		pev->nextthink = gpGlobals->time;

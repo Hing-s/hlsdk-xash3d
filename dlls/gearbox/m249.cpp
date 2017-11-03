@@ -176,7 +176,7 @@ void CM249::PrimaryAttack()
 
 
 #ifndef CLIENT_DLL
-	m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * (60 + (RANDOM_LONG(1, 2) * 2));
+	m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * (40 + (RANDOM_LONG(1, 2) * 2));
 #endif
 
 	if (!m_iClip && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)

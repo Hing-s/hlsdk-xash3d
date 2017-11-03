@@ -132,7 +132,7 @@ void CPortal::Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity )
 	pSpit->Spawn();
 	UTIL_SetOrigin(pSpit->pev, vecStart);
 	pSpit->pev->velocity = vecVelocity;
-	pSpit->pev->angles = vecVelocity;
+	pSpit->pev->angles = pSpit->pev->velocity;
 	pSpit->pev->owner = ENT(pevOwner);
 }
 
@@ -257,7 +257,7 @@ void CPortal::ExplodeThink( void )
 
 	UTIL_Remove( this );
 
-	::RadiusDamage( pev->origin, pev, pevOwner, 300, 400, CLASS_NONE, DMG_ENERGYBEAM );
+	::RadiusDamage( pev->origin, pev, pevOwner, 300, 300, CLASS_NONE, DMG_ENERGYBEAM );
 }
 
 void CPortal::ClearBeams( void )

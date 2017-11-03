@@ -111,16 +111,16 @@ public:
 #define SNARK_WEIGHT			5
 #define SATCHEL_WEIGHT			-10
 #define TRIPMINE_WEIGHT			-10
-#define DISPLACER_WEIGHT			20
+#define DISPLACER_WEIGHT			10
 #define EAGLE_WEIGHT			15
-#define GRAPPLE_WEIGHT			0
+#define GRAPPLE_WEIGHT			21
 #define KNIFE_WEIGHT			0
 #define M249_WEIGHT			15
 #define PENGUIN_WEIGHT			5
-#define PIPEWRENCH_WEIGHT		0
-#define SHOCKRIFLE_WEIGHT			10
+#define PIPEWRENCH_WEIGHT		2
+#define SHOCKRIFLE_WEIGHT			15
 #define SNIPERRIFLE_WEIGHT		10
-#define SPORELAUNCHER_WEIGHT		10
+#define SPORELAUNCHER_WEIGHT		20
 
 // weapon clip/carry ammo capacities
 #define URANIUM_MAX_CARRY		100
