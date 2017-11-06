@@ -22,10 +22,11 @@ class CSpore : public CBaseEntity
 public:
 	void Spawn( void );
 	void Precache( void );
+
 	void Glow( void );
 	void Explode( void );
 	void BounceSound( void );
-	void EXPORT ExplodeTouch( CBaseEntity *pOther );
+	void EXPORT RocketTouch( CBaseEntity *pOther );
 	void EXPORT BounceTouch( CBaseEntity *pOther );
 	void EXPORT FlyThink( void );
 	static CSpore *CreateSporeRocket( Vector vecOrigin, Vector vecAngles, CBaseEntity *pOwner );
