@@ -51,6 +51,7 @@ public class LauncherActivity extends Activity {
 		buttonparams.setMargins(10,20,10,20);//размеры строки для ввода аргументов
 		launcherTitle.setLayoutParams(titleparams);
         launcherTitle.setText("Half-Life: Opposing Force");
+        launcherTitle.setGravity(1);
         launcherTitle.setTextColor(0xFF4db017);
         launcherTitle.setTextAppearance(this, android.R.attr.textAppearanceMedium);
 		launcherTitle.setTextSize(25);
