@@ -239,7 +239,7 @@ void CBlowerCannon::BlowerCannonUse( CBaseEntity *pActivator, CBaseEntity *pCall
 void CBlowerCannon::Precache( void )
 {
 	UTIL_PrecacheOther( "shock_beam" );
-	UTIL_PrecacheOther( "portal" );
+	UTIL_PrecacheOther( "displacer_ball" );
 	UTIL_PrecacheOther( "spore" );
 }
 
@@ -273,7 +273,7 @@ void CBlowerCannon::BlowerCannonThink( void )
 		}
 		else if( m_iWeapType == 4 )//displacer ball
 		{
-			CPortal::Shoot(pev, pev->origin, gpGlobals->v_forward * 600);
+			CDisplacerBall::Shoot(pev, pev->origin, gpGlobals->v_forward * 500, angles);
 		}
 	}
 	if( m_iFireType == 2 )

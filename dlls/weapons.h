@@ -1458,12 +1458,12 @@ private:
 	unsigned short m_usSniper;
 };
 
-class CPortal : public CBaseEntity
+class CDisplacerBall : public CBaseEntity
 {
 public:
-	void Spawn(void);
+	void Spawn( void );
 
-	static void Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity);
+	static void Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity, Vector vecAngles);
 	static void SelfCreate(entvars_t *pevOwner, Vector vecStart);
 
 	void Touch(CBaseEntity *pOther);

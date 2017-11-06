@@ -33,17 +33,17 @@ int iRingSprite = 0;
 // Displacement field
 //=========================================================
 
-LINK_ENTITY_TO_CLASS(portal, CPortal);
+LINK_ENTITY_TO_CLASS(displacer_ball, CDisplacerBall);
 
-TYPEDESCRIPTION	CPortal::m_SaveData[] =
+TYPEDESCRIPTION	CDisplacerBall::m_SaveData[] =
 {
-	DEFINE_FIELD(CPortal, m_iBeams, FIELD_INTEGER),
-	DEFINE_ARRAY(CPortal, m_pBeam, FIELD_CLASSPTR, 8),
+	DEFINE_FIELD(CDisplacerBall, m_iBeams, FIELD_INTEGER),
+	DEFINE_ARRAY(CDisplacerBall, m_pBeam, FIELD_CLASSPTR, 8),
 };
 
-IMPLEMENT_SAVERESTORE(CPortal, CBaseEntity);
+IMPLEMENT_SAVERESTORE(CDisplacerBall, CBaseEntity);
 
-void CPortal::Spawn(void)
+void CDisplacerBall::Spawn(void)
 {
 	pev->movetype = MOVETYPE_FLY;
 	pev->classname = MAKE_STRING("portal");
@@ -56,21 +56,21 @@ void CPortal::Spawn(void)
 	pev->frame = 0;
 	pev->scale = 0.75;
 
-	SetThink( &CPortal::FlyThink );
+	SetThink( &CDisplacerBall::FlyThink );
 	pev->nextthink = gpGlobals->time + 0.2;
 	UTIL_SetSize(pev, Vector(0, 0, 0), Vector(0, 0, 0));
 
 	m_iBeams = 0;
 }
 
-void CPortal::FlyThink()
+void CDisplacerBall::FlyThink()
 {
 	ArmBeam( -1 );
 	ArmBeam( 1 );
 	pev->nextthink = gpGlobals->time + 0.05;
 }
 
-void CPortal::ArmBeam( int iSide )
+void CDisplacerBall::ArmBeam( int iSide )
 {
 	//This method is identical to the Alien Slave's ArmBeam, except it treats m_pBeam as a circular buffer.
 	if( m_iBeams > 7 )
@@ -83,7 +83,7 @@ void CPortal::ArmBeam( int iSide )
 	Vector vecSrc = gpGlobals->v_forward * 32.0 + iSide * gpGlobals->v_right * 16.0 + gpGlobals->v_up * 36.0 + pev->origin;
 	Vector vecAim = gpGlobals->v_up * RANDOM_FLOAT( -1.0, 1.0 );
 	Vector vecEnd = (iSide * gpGlobals->v_right * RANDOM_FLOAT( 0.0, 1.0 ) + vecAim) * 512.0 + vecSrc;
-	UTIL_TraceLine( vecSrc, vecEnd, dont_ignore_monsters, ENT( pev ), &tr );
+	UTIL_TraceLine( &vecSrc.x, &vecEnd.x, dont_ignore_monsters, ENT( pev ), &tr );
 
 	if( flDist > tr.flFraction )
 		flDist = tr.flFraction;
@@ -120,25 +120,25 @@ void CPortal::ArmBeam( int iSide )
 	{
 		m_pBeam[ m_iBeams ]->PointEntInit( tr.vecEndPos, entindex() );
 		m_pBeam[ m_iBeams ]->SetColor( 96, 128, 16 );
-		m_pBeam[ m_iBeams ]->SetBrightness( 164 );
+		m_pBeam[ m_iBeams ]->SetBrightness( 255 );
 		m_pBeam[ m_iBeams ]->SetNoise( 80 );
 	}
 	m_iBeams++;
 }
 
-void CPortal::Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity )
+void CDisplacerBall::Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity, Vector vecAngles )
 {
-	CPortal *pSpit = GetClassPtr((CPortal *)NULL);
+	CDisplacerBall *pSpit = GetClassPtr((CDisplacerBall *)NULL);
 	pSpit->Spawn();
 	UTIL_SetOrigin(pSpit->pev, vecStart);
 	pSpit->pev->velocity = vecVelocity;
-	pSpit->pev->angles = pSpit->pev->velocity;
+	pSpit->pev->angles = vecAngles;
 	pSpit->pev->owner = ENT(pevOwner);
 }
 
-void CPortal::SelfCreate(entvars_t *pevOwner,Vector vecStart)
+void CDisplacerBall::SelfCreate(entvars_t *pevOwner,Vector vecStart)
 {
-	CPortal *pSelf = GetClassPtr((CPortal *)NULL);
+	CDisplacerBall *pSelf = GetClassPtr((CDisplacerBall *)NULL);
 	pSelf->Spawn();
 	pSelf->ClearBeams();
 	UTIL_SetOrigin(pSelf->pev, vecStart);
@@ -146,12 +146,12 @@ void CPortal::SelfCreate(entvars_t *pevOwner,Vector vecStart)
 	pSelf->pev->owner = ENT(pevOwner);
 	pSelf->Circle();
 	pSelf->SetTouch( NULL );
-	pSelf->SetThink(&CPortal::ExplodeThink);
+	pSelf->SetThink(&CDisplacerBall::ExplodeThink);
 	pSelf->pev->nextthink = gpGlobals->time + 0.3;
 }
 
 
-void CPortal::Touch(CBaseEntity *pOther)
+void CDisplacerBall::Touch(CBaseEntity *pOther)
 {
 	// Do not collide with the owner.
 	if (ENT(pOther->pev) == pev->owner || (ENT(pOther->pev) == VARS(pev->owner)->owner))
@@ -180,7 +180,7 @@ void CPortal::Touch(CBaseEntity *pOther)
 	if(pTarget && pOther->IsPlayer())
    	{
 		Vector tmp = pTarget->pev->origin;
-		UTIL_CleanSpawnPoint( tmp, 50 );
+		UTIL_CleanSpawnPoint( tmp, 100 );
 
 		EMIT_SOUND( pOther->edict(), CHAN_BODY, "weapons/displacer_self.wav", 1, ATTN_NORM );
 
@@ -208,10 +208,10 @@ void CPortal::Touch(CBaseEntity *pOther)
 	// Clear beams.
 	ClearBeams();
 
-	SetThink(&CPortal::ExplodeThink);
+	SetThink(&CDisplacerBall::ExplodeThink);
 	pev->nextthink = gpGlobals->time + 0.3;
 }
-void CPortal::Circle( void )
+void CDisplacerBall::Circle( void )
 {
 	// portal circle
 	MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pev->origin);
@@ -237,7 +237,7 @@ void CPortal::Circle( void )
 
 }
 
-void CPortal::ExplodeThink( void )
+void CDisplacerBall::ExplodeThink( void )
 {
 	pev->effects |= EF_NODRAW;
 
@@ -260,7 +260,7 @@ void CPortal::ExplodeThink( void )
 	::RadiusDamage( pev->origin, pev, pevOwner, 300, 300, CLASS_NONE, DMG_ENERGYBEAM );
 }
 
-void CPortal::ClearBeams( void )
+void CDisplacerBall::ClearBeams( void )
 {
 	for( int i = 0;i < 8; i++ )
 	{
@@ -383,7 +383,7 @@ void CDisplacer::Precache(void)
 	iRingSprite = PRECACHE_MODEL("sprites/disp_ring.spr");
 #endif
 
-	UTIL_PrecacheOther("portal");
+	UTIL_PrecacheOther("displacer_ball");
 	
 	m_usDisplacer = PRECACHE_EVENT(1, "events/displacer.sc");
 }
@@ -567,7 +567,7 @@ void CDisplacer::Displace( void )
 	vecSrc = vecSrc + gpGlobals->v_right	* 8;
 	vecSrc = vecSrc + gpGlobals->v_up		* -12;
 
-	CPortal::Shoot(m_pPlayer->pev, vecSrc, gpGlobals->v_forward * 500 );
+	CDisplacerBall::Shoot(m_pPlayer->pev, vecSrc, gpGlobals->v_forward * 500, m_pPlayer->pev->v_angle );
 #endif
 	SetThink( NULL );
 }
@@ -614,7 +614,7 @@ void CDisplacer::Teleport( void )
 		UTIL_CleanSpawnPoint( tmp, 50 );
 
 		EMIT_SOUND( edict(), CHAN_BODY, "weapons/displacer_self.wav", 1, ATTN_NORM );
-	 	CPortal::SelfCreate(m_pPlayer->pev, m_pPlayer->pev->origin);
+	 	CDisplacerBall::SelfCreate(m_pPlayer->pev, m_pPlayer->pev->origin);
 
 		// make origin adjustments (origin in center, not at feet)
 		tmp.z -= m_pPlayer->pev->mins.z +5;
