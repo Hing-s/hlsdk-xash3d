@@ -171,7 +171,7 @@ public:
 	void KeyValue(KeyValueData* pkvd);
 	void EXPORT BlowerCannonThink( void );
 	void EXPORT BlowerCannonStart( void );
-	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+	void EXPORT BlowerCannonUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
 	virtual int Save(CSave &save);
 	virtual int Restore(CRestore &restore);
@@ -183,6 +183,7 @@ public:
 	int m_iFireType;
 	int m_iZOffSet;
 };
+
 LINK_ENTITY_TO_CLASS(env_blowercannon, CBlowerCannon);
 
 TYPEDESCRIPTION	CBlowerCannon::m_SaveData[] =
@@ -226,10 +227,10 @@ void CBlowerCannon::Spawn(void)
 	Precache();
 	UTIL_SetSize( pev, Vector(-16, -16, -16), Vector( 16, 16, 16 ) );
 	pev->solid = SOLID_TRIGGER;
-	SetUse( &CBlowerCannon::Use );
+	SetUse( &CBlowerCannon::BlowerCannonUse );
 }
 
-void CBlowerCannon::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+void CBlowerCannon::BlowerCannonUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
 	SetThink( &CBlowerCannon::BlowerCannonStart );
 	pev->nextthink = gpGlobals->time + 0.1;
@@ -238,14 +239,12 @@ void CBlowerCannon::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE
 void CBlowerCannon::Precache( void )
 {
 	UTIL_PrecacheOther( "shock_beam" );
-	UTIL_PrecacheOther( "displacer_ball" );
-	UTIL_PrecacheOther( "monster_spore" );
+	UTIL_PrecacheOther( "portal" );
+	UTIL_PrecacheOther( "spore" );
 }
 
 void CBlowerCannon::BlowerCannonThink( void )
 {
-	//ALERT(at_console, "thinking!\n");
-
 	CBaseEntity *pTarget = GetNextTarget();
 	Vector angles, direction;
 
