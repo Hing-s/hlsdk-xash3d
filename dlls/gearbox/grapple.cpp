@@ -433,6 +433,10 @@ void CBarnacleGrapple::WeaponIdle( void )
 		EndAttack();
 	}
 
+	if( m_flTimeWeaponIdle > UTIL_WeaponTimeBase() )
+		return;
+
+
 	m_bMissed = FALSE;
 
 	const float flNextIdle = RANDOM_FLOAT( 0.0, 1.0 );
@@ -446,7 +450,7 @@ void CBarnacleGrapple::WeaponIdle( void )
 	}
 	else if( flNextIdle > 0.95 )
 	{
-		EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/bgrapple_cough.wav", 1, ATTN_NORM);
+		EMIT_SOUND_DYN( ENT(m_pPlayer->pev), CHAN_STATIC, "weapons/bgrapple_cough.wav", VOL_NORM, ATTN_NORM, 0, PITCH_NORM );
 
 		iAnim = BGRAPPLE_COUGH;
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 4.6;
@@ -486,18 +490,17 @@ void CBarnacleGrapple::PrimaryAttack( void )
 			{
 				m_pPlayer->pev->movetype = MOVETYPE_FLY;
 				//Tells the physics code that the player is not on a ladder - Solokiller
-				m_pPlayer->pev->flags |= FL_IMMUNE_LAVA;
 			}
 
 			if( m_bMomentaryStuck )
 			{
 				SendWeaponAnim( BGRAPPLE_FIRETRAVEL );
 
-				EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/bgrapple_impact.wav", 0.98 , ATTN_NORM);
+				EMIT_SOUND_DYN( ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/bgrapple_impact.wav", 0.98, ATTN_NORM, 0, 125 );
 
 				if( pTarget->IsPlayer() )
 				{
-					EMIT_SOUND(ENT(pTarget->pev), CHAN_VOICE, "weapons/bgrapple_impact.wav", 0.98 , ATTN_NORM);
+					EMIT_SOUND_DYN( ENT(pTarget->pev), CHAN_WEAPON,"weapons/bgrapple_impact.wav", 0.98, ATTN_NORM, 0, 125 );
 				}
 
 				m_bMomentaryStuck = FALSE;
@@ -545,7 +548,8 @@ void CBarnacleGrapple::PrimaryAttack( void )
 					else
 					{
 						m_bGrappling = TRUE;
-						m_pPlayer->SetAnimation( PLAYER_GRAPPLE );
+						m_pPlayer->m_afPhysicsFlags |= PFLAG_LATCHING;
+						EMIT_SOUND_DYN(  ENT( m_pPlayer->pev ), CHAN_WEAPON, "weapons/bgrapple_pull.wav", 0.98, ATTN_NORM, 0, 125 );
 					}
 				}
 				else
@@ -560,7 +564,7 @@ void CBarnacleGrapple::PrimaryAttack( void )
 
 		if( m_pTip->HasMissed() )
 		{
-			EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/bgrapple_release.wav", 0.98 , ATTN_NORM);
+			EMIT_SOUND_DYN( ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/bgrapple_release.wav", 0.98, ATTN_NORM, 0, 125 );
 
 			EndAttack();
 			return;
@@ -582,8 +586,7 @@ void CBarnacleGrapple::PrimaryAttack( void )
 			m_pPlayer->pev->punchangle = vecPunchAngle;
 
 			Fire( m_pPlayer->GetGunPosition(), gpGlobals->v_forward );
-			EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/bgrapple_pull.wav", 0.98 , ATTN_NORM);
-
+			EMIT_SOUND_DYN( ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/bgrapple_pull.wav", 0.98, ATTN_NORM, 0, 125 );
 			m_flShootTime = 0;
 		}
 	}
@@ -606,8 +609,7 @@ void CBarnacleGrapple::PrimaryAttack( void )
 			m_flShootTime = gpGlobals->time + 0.35;
 		}
 
-		EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/bgrapple_fire.wav", 0.98 , ATTN_NORM);
-
+		EMIT_SOUND_DYN( ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/bgrapple_fire.wav", 0.98, ATTN_NORM, 0, 125 );
 		m_FireState = CHARGE;
 	}
 
@@ -704,7 +706,8 @@ void CBarnacleGrapple::PrimaryAttack( void )
 							case 1: pszSample = "barnacle/bcl_chew2.wav"; break;
 							case 2: pszSample = "barnacle/bcl_chew3.wav"; break;
 							}
-							EMIT_SOUND(ENT(pev), CHAN_VOICE, pszSample, 0.98 , ATTN_NORM);						}
+							EMIT_SOUND_DYN(ENT(m_pPlayer->pev), CHAN_VOICE, pszSample, VOL_NORM, ATTN_NORM, 0, 125 );
+						}
 					}
 				}
 			}
@@ -715,29 +718,12 @@ void CBarnacleGrapple::PrimaryAttack( void )
 	/*
 	if( g_pGameRules->IsMultiplayer() && g_pGameRules->IsCTF() )
 	{
-		m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase();
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase();
 	}
 	else
 	*/
 	{
 		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.01;
-		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
-	}
-}
-
-void CBarnacleGrapple::SecondaryAttack( void )
-{
-	if( m_pTip && m_pTip->IsStuck() && 
-		( !m_pTip->GetGrappleTarget() || m_pTip->GetGrappleTarget()->IsPlayer() ) )
-	{
-		EndAttack();
-	}
-	else
-	{
-		UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
-
-		m_pPlayer->pev->movetype = MOVETYPE_WALK;
-		//m_pPlayer->pev->flags =& ~PFLAG_LATCHING;
 	}
 }
 
@@ -772,24 +758,24 @@ void CBarnacleGrapple::Fire( Vector vecOrigin, Vector vecDir )
 void CBarnacleGrapple::EndAttack( void )
 {
 	m_FireState = OFF;
-	SendWeaponAnim( BGRAPPLE_FIREREACHED );
+	SendWeaponAnim( BGRAPPLE_FIRERELEASE );
 
-	EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/bgrapple_release.wav", 1, ATTN_NORM);
+	EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/bgrapple_release.wav", 1, ATTN_NORM);
 
-	STOP_SOUND( edict(), CHAN_VOICE, "weapons/bgrapple_pull.wav" );
+	EMIT_SOUND_DYN( ENT( m_pPlayer->pev ), CHAN_WEAPON, "weapons/bgrapple_pull.wav", 0.0, ATTN_NONE, SND_STOP, 100 );
 
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.8;
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.9;
 
 	//TODO: CTF support - Solokiller
 	/*
 	if( g_pGameRules->IsMultiplayer() && g_pGameRules->IsCTF() )
 	{
-	m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase();
+	m_flNextPrimaryAttack = UTIL_WeaponTimeBase();
 	}
 	else
 	*/
 	{
-		m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.01;
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.01;
 	}
 
 	DestroyEffect();
@@ -800,7 +786,7 @@ void CBarnacleGrapple::EndAttack( void )
 	}
 
 	m_pPlayer->pev->movetype = MOVETYPE_WALK;
-	//m_pPlayer->pev->flags =& ~PFLAG_LATCHING;
+	m_pPlayer->m_afPhysicsFlags &= ~PFLAG_LATCHING;
 }
 
 void CBarnacleGrapple::CreateEffect( void )

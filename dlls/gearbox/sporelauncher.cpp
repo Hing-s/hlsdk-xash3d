@@ -227,7 +227,7 @@ void CSporelauncher::SecondaryAttack(void)
 	Vector vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -8;
 
 #ifndef CLIENT_DLL
-		CSpore *pSpore = CSpore::CreateSporeGrenade( vecSrc, m_pPlayer->pev->v_angle, m_pPlayer );
+		CSpore *pSpore = CSpore::CreateSporeGrenade( vecSrc, m_pPlayer->pev->v_angle, m_pPlayer, FALSE );
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 		pSpore->pev->velocity = pSpore->pev->velocity + gpGlobals->v_forward * 700;
 #endif

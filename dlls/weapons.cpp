@@ -367,7 +367,7 @@ void W_Precache( void )
 	UTIL_PrecacheOtherWeapon( "weapon_displacer" );
 	UTIL_PrecacheOtherWeapon( "weapon_eagle" );
 	UTIL_PrecacheOtherWeapon( "weapon_grapple" );
-	UTIL_PrecacheOther( "grapple_tonguetip" );
+	UTIL_PrecacheOther( "grapple_tip" );
 	UTIL_PrecacheOtherWeapon( "weapon_knife" );
 	UTIL_PrecacheOtherWeapon( "weapon_m249" );
 	UTIL_PrecacheOther( "ammo_556" );
@@ -1610,7 +1610,6 @@ IMPLEMENT_SAVERESTORE( CSatchel, CBasePlayerWeapon )
 
 TYPEDESCRIPTION	CDisplacer::m_SaveData[] =
 {
-	DEFINE_FIELD( CDisplacer, m_iFireState, FIELD_INTEGER ),
 	DEFINE_FIELD( CDisplacer, m_iFireMode, FIELD_INTEGER ),
 	DEFINE_FIELD( CDisplacer, m_hTargetEarth, FIELD_CLASSPTR ),
 	DEFINE_FIELD( CDisplacer, m_hTargetXen, FIELD_CLASSPTR ),
@@ -1645,13 +1644,6 @@ TYPEDESCRIPTION	CPipeWrench::m_SaveData[] =
 	DEFINE_FIELD( CPipeWrench, m_flHoldStartTime, FIELD_TIME ),
 };
 IMPLEMENT_SAVERESTORE( CPipeWrench, CBasePlayerWeapon )
-
-TYPEDESCRIPTION	CShockrifle::m_SaveData[] =
-{
-	DEFINE_FIELD( CShockrifle, m_fShouldUpdateEffects, FIELD_BOOLEAN ),
-	DEFINE_FIELD( CShockrifle, m_flBeamLifeTime, FIELD_TIME ),
-};
-IMPLEMENT_SAVERESTORE( CShockrifle, CHgun )
 
 TYPEDESCRIPTION	CSniperrifle::m_SaveData[] =
 {

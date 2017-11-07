@@ -1857,53 +1857,53 @@ void EV_Displacer( event_args_t *args )
 		break;
 	}
 
-	switch( args->bparam1 )
+	int fPlayEffects = args->bparam1;
+	if( fPlayEffects )
 	{
-	case 1: // EFFECT_CORE
+		int iBeamModelIndex = gEngfuncs.pEventAPI->EV_FindModelIndex( "sprites/lgtning.spr" );
+
+		cl_entity_t *vm = gEngfuncs.GetViewModel();
+		if( vm )
 		{
-			int iBeamModelIndex = gEngfuncs.pEventAPI->EV_FindModelIndex( "sprites/lgtning.spr" );
+			// Valid viewmodel.
+			gEngfuncs.pEventAPI->EV_SetUpPlayerPrediction( false, true );
 
-			cl_entity_t *vm = gEngfuncs.GetViewModel();
-			if( vm )
+			int iStartAttach, iEndAttach;
+
+			// Store off the old count
+			gEngfuncs.pEventAPI->EV_PushPMStates();
+			for( int i = 2; i < 5; i++ )
 			{
-				// Valid viewmodel.
-				gEngfuncs.pEventAPI->EV_SetUpPlayerPrediction( false, true );
-
-				// Store off the old count
-				gEngfuncs.pEventAPI->EV_PushPMStates();
-
-				for( int i = 1; i < 4; i++ )
+				if( i < 4 )
 				{
-					BEAM *pBeam = gEngfuncs.pEfxAPI->R_BeamPoints(
-						(float*)&vm->attachment[i],
-						(float*)&vm->attachment[i+1],
-						iBeamModelIndex,
-						0.01f,
-						1.5f,
-						0.2f,
-						64,
-						10,
-						0,
-						10,
-						0.0f,
-						1.0f,
-						0.0f );
-
-					if( pBeam )
-					{
-						//pBeam->flags |= ( FBEAM_SHADEIN | FBEAM_SHADEOUT );
-						pBeam->startEntity = vm->index;
-						pBeam->endEntity = vm->index;
-					}
+					iStartAttach = i;
+					iEndAttach = i + 1;
 				}
+				else
+				{
+					iStartAttach = 4;
+					iEndAttach = 2;
+				}
+				BEAM *pBeam = gEngfuncs.pEfxAPI->R_BeamEnts(
+					args->entindex | ( iStartAttach << 12 ),
+					args->entindex | ( iEndAttach << 12 ),
+					iBeamModelIndex,
+					0.9,
+					1.6,
+					0,
+					64,
+					0,
+					10,
+					25,
+					96,
+					128,
+					16 );
 
-				gEngfuncs.pEventAPI->EV_PopPMStates();
 			}
+			gEngfuncs.pEventAPI->EV_PopPMStates();
 		}
-		break;
-	default:
-		break;
 	}
+
 }
 //======================
 //	    DISPLACER END 
@@ -2268,20 +2268,17 @@ void EV_ShockFire( event_args_t *args )
 
 	int fPlayEffects = args->iparam1;
 
-	// Primary attack.
-	if( !fPlayEffects )
+	//Only play the weapon anims if I shot it.
+	if( EV_IsLocal( idx ) )
 	{
-		//Only play the weapon anims if I shot it.
-		if( EV_IsLocal( idx ) )
-		{
-			V_PunchAxis( 0, gEngfuncs.pfnRandomLong( 0, 2 ) );
-			gEngfuncs.pEventAPI->EV_WeaponAnimation( SHOCK_FIRE, 1 );
-		}
-
-		// Play fire sound.
-		gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_WEAPON, "weapons/shock_fire.wav", 1, ATTN_NORM, 0, 100 );
+		V_PunchAxis( 0, gEngfuncs.pfnRandomLong( 0, 2 ) );
+		gEngfuncs.pEventAPI->EV_WeaponAnimation( SHOCK_FIRE, 1 );
 	}
-	else // Play weapon effects.
+
+	// Play fire sound.
+	gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_WEAPON, "weapons/shock_fire.wav", 1, ATTN_NORM, 0, 100 );
+
+	if( fPlayEffects ) // Play weapon effects.
 	{
 		int iBeamModelIndex = gEngfuncs.pEventAPI->EV_FindModelIndex( "sprites/lgtning.spr" );
 
@@ -2295,15 +2292,26 @@ void EV_ShockFire( event_args_t *args )
 			// Store off the old count
 			gEngfuncs.pEventAPI->EV_PushPMStates();
 
-			for( int i = 1; i < 4; i++ )
+			int iEndAttach;
+
+			for( int i = 1; i < 10; i++ )
 			{
-				BEAM *pBeam = gEngfuncs.pEfxAPI->R_BeamPoints(
-					(float*)&vm->attachment[0],
-					(float*)&vm->attachment[i],
+				if( i <= 3 )
+					iEndAttach = i;
+				else if( i == 4 || i == 5 )
+					iEndAttach = 1;
+				else if( i == 6 || i == 7 )
+					iEndAttach = 2;
+				else if( i == 8 || i == 9 )
+					iEndAttach = 3;
+				iEndAttach++;
+				BEAM *pBeam = gEngfuncs.pEfxAPI->R_BeamEnts(
+					args->entindex | ( 1 << 12 ),
+					args->entindex | ( iEndAttach << 12 ),
 					iBeamModelIndex,
-					0.01f,
+					0.2,
 					1.1f,
-					0.3f,
+					4,
 					230 + gEngfuncs.pfnRandomFloat( 20, 30 ),
 					10,
 					0,
@@ -2313,11 +2321,7 @@ void EV_ShockFire( event_args_t *args )
 					1.0f );
 
 				if( pBeam )
-				{
 					pBeam->flags |= ( FBEAM_SHADEIN | FBEAM_SHADEOUT );
-					pBeam->startEntity = vm->index;
-					pBeam->endEntity = vm->index;
-				}
 			}
 
 			gEngfuncs.pEventAPI->EV_PopPMStates();

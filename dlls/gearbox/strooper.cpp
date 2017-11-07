@@ -323,7 +323,7 @@ void CStrooper::HandleAnimEvent(MonsterEvent_t *pEvent)
 		UTIL_MakeVectors(pev->angles);
 		// CGrenade::ShootTimed( pev, pev->origin + gpGlobals->v_forward * 34 + Vector (0, 0, 32), m_vecTossVelocity, 3.5 );
 		//CSporeGrenade::ShootTimed(pev, , m_vecTossVelocity, 3.5);
-		CSpore *pSpore = CSpore::CreateSporeGrenade( GetGunPosition(), pev->angles, this );
+		CSpore *pSpore = CSpore::CreateSporeGrenade( GetGunPosition(), pev->angles, this, TRUE );
 		pSpore->pev->velocity = m_vecTossVelocity;
 
 		m_fThrowGrenade = FALSE;

@@ -2809,7 +2809,7 @@ public:
 	static char *m_szPoses[7];
 };
 
-char *CDeadFGrunt::m_szPoses[] = { "deadstomach", "deadside", "deadsitting", "dead_on_back", "dead_headcrabbed", "hgrunt_dead_stomach", "dead_canyon" };
+char *CDeadFGrunt::m_szPoses[] = { "deadstomach", "deadside", "deadsitting", "dead_on_back", "dead_on_stomach", "dead_headcrabed" };
 
 void CDeadFGrunt::KeyValue( KeyValueData *pkvd )
 {

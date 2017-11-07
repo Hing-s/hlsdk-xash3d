@@ -75,8 +75,7 @@ typedef enum
 	PLAYER_JUMP,
 	PLAYER_SUPERJUMP,
 	PLAYER_DIE,
-	PLAYER_ATTACK1,
-	PLAYER_GRAPPLE
+	PLAYER_ATTACK1
 } PLAYER_ANIM;
 
 #define MAX_ID_RANGE 2048
@@ -360,6 +359,12 @@ public:
 	CRope *m_pRope;
 	bool m_bIsClimbing;
 	float m_flLastClimbTime;
+
+	BOOL IsOnRope()
+	{ 
+		return ( m_afPhysicsFlags & PFLAG_ONROPE ) != 0; 
+	}
+
 	void *SetRope( CBaseEntity *pRope )
 	{
 		m_pRope = (CRope*)pRope;
@@ -372,7 +377,7 @@ public:
 		m_afPhysicsFlags &= ~PFLAG_ONROPE;
 
 	}
-
+	CRope* GetRope() { return m_pRope; }
 
 	void Service_Grapple( void );
 };

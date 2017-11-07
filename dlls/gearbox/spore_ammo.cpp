@@ -81,7 +81,7 @@ void CSporeAmmo :: Spawn( void )
 	SET_MODEL(ENT(pev), "models/spore_ammo.mdl");
 	UTIL_SetSize(pev, Vector( -16, -16, -16 ), Vector( 16, 16, 16 ));
 	pev->takedamage = DAMAGE_YES;
-	pev->solid			= SOLID_SLIDEBOX;
+	pev->solid			= SOLID_BBOX;
 	pev->movetype		= MOVETYPE_NONE;
 	pev->framerate		= 1.0;
 	pev->animtime		= gpGlobals->time + 0.1;
@@ -111,7 +111,7 @@ int CSporeAmmo::TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, flo
 	if (!borntime) // rigth '!borntime'  // blast in anytime 'borntime || !borntime'
 	{
 		CBaseEntity *attacker = GetClassPtr( (CBaseEntity*)pevAttacker );
-		Vector vecSrc = pev->origin + gpGlobals->v_forward * -20;
+		Vector vecSrc = pev->origin + gpGlobals->v_forward * -30;
 
 		MESSAGE_BEGIN( MSG_PAS, SVC_TEMPENTITY, pev->origin );
 			WRITE_BYTE( TE_EXPLOSION );		// This makes a dynamic light and the explosion sprites/sound
@@ -127,7 +127,7 @@ int CSporeAmmo::TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, flo
 			
 		//ALERT( at_console, "angles %f %f %f\n", pev->angles.x, pev->angles.y, pev->angles.z );
 
-		Vector angles = pev->angles + gpGlobals->v_up*2;
+		Vector angles = pev->angles;
 		angles.x -= 90;
 		angles.y += 180;
 
@@ -141,7 +141,7 @@ int CSporeAmmo::TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, flo
 		//CBaseEntity *pSpore = CSporeGrenade::ShootTimed(attacker->pev, vecSrc, gpGlobals->v_forward * 1000, RANDOM_FLOAT(5, 6));
 		//pSpore->pev->angles = vecLaunchDir;
 		UTIL_MakeVectors( vecLaunchDir );
-		CSpore *pSpore = CSpore::CreateSporeGrenade( vecSrc, vecLaunchDir, attacker );
+		CSpore *pSpore = CSpore::CreateSporeGrenade( vecSrc, vecLaunchDir, attacker, FALSE );
 		pSpore->pev->velocity = pSpore->pev->velocity + gpGlobals->v_forward * 700;
 
 		pev->framerate		= 1.0;

@@ -132,8 +132,8 @@ void CM249::PrimaryAttack()
 		return;
 	}
 
-	m_pPlayer->pev->punchangle.x = RANDOM_FLOAT( 1.0f, 1.5f );
-	m_pPlayer->pev->punchangle.y = RANDOM_FLOAT( -0.5f, -0.2f );
+	m_pPlayer->pev->punchangle.x = RANDOM_FLOAT( 1.0f, 2.5f );
+	m_pPlayer->pev->punchangle.y = RANDOM_FLOAT( -1.0f, -2.5f );
 
 	m_pPlayer->m_iWeaponVolume = NORMAL_GUN_VOLUME;
 	m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;
@@ -176,13 +176,7 @@ void CM249::PrimaryAttack()
 
 
 #ifndef CLIENT_DLL
-	// Add inverse impulse.
-	float flZVel = m_pPlayer->pev->velocity.z;
-
 	m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * (40 + (RANDOM_LONG(1, 2) * 2));
-
-	// Add backward velocity
-	m_pPlayer->pev->velocity.z = flZVel;
 #endif
 
 	if (!m_iClip && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
