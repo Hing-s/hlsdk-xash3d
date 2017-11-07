@@ -90,6 +90,8 @@ public:
         Vector m_vecDesired;
         Vector m_posDesired;
 
+        Vector m_vecEmemyPos;
+
         float  m_flMinZ;
         float  m_flMaxZ;
 
@@ -147,6 +149,7 @@ public:
         const Vector m_eyes;
         float m_flDamageTime;
         float m_flDamage;
+        float m_flPlayerDamage;
 
         float m_flNextAttackTime;
         float m_flNextIdleSoundTime;
@@ -412,6 +415,7 @@ void CPitWorm::Spawn()
         m_flNextIdleSoundTime = gpGlobals->time;
         m_bloodColor = BLOOD_COLOR_GREEN;
         m_fActivated = FALSE;
+        m_vecEmemyPos = g_vecZero;
 
         // Create the eye glow.
         CreateGlow();
@@ -521,7 +525,7 @@ void CPitWorm::pPainSound(void)
 //=========================================================
 void CPitWorm::SetObjectCollisionBox(void)
 {
-        pev->absmin = pev->origin + Vector(-96, -350, 0);
+        pev->absmin = pev->origin + Vector(-96, -335, 0);
         pev->absmax = pev->origin + Vector(96, 32, 512);
 }
 
@@ -539,7 +543,7 @@ void CPitWorm::HandleAnimEvent(MonsterEvent_t *pEvent)
                 {
                         Vector vecSrc, vecAngles;
                         GetAttachment(1, vecSrc, vecAngles);
-                        Vector mins = pev->origin - Vector( 410, 400, 0 );
+                        Vector mins = pev->origin - Vector( 350, 400, 0 );
                         Vector maxs = pev->origin + Vector( 410, 0, 800 );
 
                         if (m_hEnemy) {
@@ -882,20 +886,26 @@ void CPitWorm::HuntThink(void)
 
                               //  target = m_hEnemy->pev->origin;
 
-                                TraceResult tr;
+                                TraceResult tr, tr1;
                                 UTIL_TraceLine(src, target + ((target - src).Normalize() * 1000), dont_ignore_monsters, ENT(pev), &tr);
+                                UTIL_TraceLine(src, target + ((target - src).Normalize() * 1000), ignore_monsters, ENT(pev), &tr1); // for sparks
 
                                 UpdateBeam(src, tr.vecEndPos);
 
                                 // Test to see if we hit
                                 CBaseEntity *pHurt = CBaseEntity::Instance(tr.pHit);
                                 if (pHurt)
-                                        pHurt->TakeDamage(VARS(pev), VARS(pev), gSkillData.pwormDmgBeam/5.2, DMG_BURN);
+                                {
+                                    if(m_flPlayerDamage <= gSkillData.pwormDmgBeam)
+                                      pHurt->TakeDamage(VARS(pev), VARS(pev), 1, DMG_BURN);
+
+                                    m_flPlayerDamage+=0.15;
+                                }
 
                                 if(tr.flFraction != 1.0)
                                 {
                                     UTIL_DecalTrace(&tr, RANDOM_LONG(0,4));
-                                    m_pBeam->DoSparks(tr.vecEndPos, tr.vecEndPos);
+                                    UTIL_Sparks(tr1.vecEndPos);
                                 }
                         }
                         else
@@ -1240,7 +1250,7 @@ const Vector& CPitWorm::IdealPosition(CBaseEntity* pEnemy) const
 //=========================================================
 void CPitWorm::UpdateBodyControllers(void)
 {
-        if (!m_hEnemy)
+        if (!m_hEnemy || m_fBeamOn)
                 return;
 
         ASSERT(m_hEnemy);
@@ -1318,6 +1328,8 @@ void CPitWorm::DestroyBeam(void)
                 m_pBeam = NULL;
 
                 m_fBeamOn = FALSE;
+                m_vecEmemyPos = g_vecZero;
+                m_flPlayerDamage = 0;
         }
 }
 
@@ -1341,10 +1353,11 @@ void CPitWorm::UpdateBeam(const Vector& src, const Vector& target)
 //=========================================================
 void CPitWorm::SetupBeamPoints(CBaseEntity* pEnemy, Vector* vecleft, Vector* vecRight)
 {
-        Vector pos;
+        Vector pos = g_vecZero;
         Vector forward, right, up;
 
-        pos = pEnemy->pev->origin;
+        if(m_vecEmemyPos == g_vecZero)
+            m_vecEmemyPos = pEnemy->pev->origin + Vector(-10,0,15);
 
         if (pEnemy->IsPlayer())
                 UTIL_MakeAimVectors(pEnemy->pev->v_angle);
@@ -1358,8 +1371,8 @@ void CPitWorm::SetupBeamPoints(CBaseEntity* pEnemy, Vector* vecleft, Vector* vec
 
         Vector beamLeft, beamRight;
 
-        *vecleft = pos + (right * -16);
-        *vecRight = pos + (right * 32);
+        *vecleft = m_vecEmemyPos + (right * -16);
+        *vecRight = m_vecEmemyPos + (right * 32);
 }
 
 //=========================================================
@@ -1371,7 +1384,7 @@ void CPitWorm::UpdateBeamPoints(CBaseEntity* pEnemy, Vector* target)
         Vector dir;
         float delta;
 
-        delta = 1.0f / PITWORM_EYEBLAST_DURATION; // 0.24 approximatly. (248 miliseconds)
+        delta = 1.0f / (PITWORM_EYEBLAST_DURATION * 2); // 0.24 approximatly. (248 miliseconds)
 
                                                                                           // Update beam yaw.
         m_flBeamYaw += delta;
@@ -1387,7 +1400,7 @@ void CPitWorm::UpdateBeamPoints(CBaseEntity* pEnemy, Vector* target)
         // This is the result representing the next beam target
         // position along the player's left and right computed beam
         // positions.
-        *target = right + (dir * (flDist*1.5));
+        *target = right + (dir * (flDist*1.2));
 }
 
 //=========================================================
