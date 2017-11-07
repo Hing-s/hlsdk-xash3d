@@ -182,6 +182,9 @@ void CSpore::BounceTouch( CBaseEntity *pOther )
 		BounceSound();
 	}
 
+    if(m_bIsAI)
+        pev->velocity = pev->velocity / 2.8;
+
 	pev->framerate = pev->velocity.Length() / 200.0;
 	if (pev->framerate > 1.0)
 		pev->framerate = 1;
