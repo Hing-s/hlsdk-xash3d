@@ -4,6 +4,7 @@
 //																					 //
 // $NoKeywords: $																	 //
 //===================================================================================//
+//Modifided by Lost_Gamer_
 
 #include "extdll.h"
 #include "util.h"
@@ -24,66 +25,11 @@ enum deagle_e {
 	DEAGLE_RELOAD,
 	DEAGLE_RELOAD_NOT_EMPTY,
 	DEAGLE_DRAW,
-	DEAGLE_HOLSTER,
+	DEAGLE_HOLSTER
 };
 LINK_ENTITY_TO_CLASS( weapon_eagle, CEagle );
 
-LINK_ENTITY_TO_CLASS( eagle_laser, CEagleLaser );
-//=========================================================
-//=========================================================
-CEagleLaser *CEagleLaser::CreateSpotDeagle( void )
-{
-	CEagleLaser *pEagleLaser = GetClassPtr( (CEagleLaser *)NULL );
-	pEagleLaser->Spawn();
-
-	pEagleLaser->pev->classname = MAKE_STRING("eagle_laser");
-
-	return pEagleLaser;
-}
-
-//=========================================================
-//=========================================================
-void CEagleLaser::Spawn( void )
-{
-	Precache( );
-	pev->movetype = MOVETYPE_NONE;
-	pev->solid = SOLID_NOT;
-
-	pev->rendermode = kRenderGlow;
-	pev->renderfx = kRenderFxNoDissipation;
-	pev->renderamt = 255;
-	pev->scale = 0.40;
-
-	SET_MODEL(ENT(pev), "sprites/laserdot.spr");
-	UTIL_SetOrigin( pev, pev->origin );
-};
-
-//=========================================================
-// Suspend- make the laser sight invisible. 
-//=========================================================
-void CEagleLaser::Suspend( float flSuspendTime )
-{
-	pev->effects |= EF_NODRAW;
-	SetThink( &CEagleLaser::Revive );
-	pev->nextthink = gpGlobals->time + flSuspendTime;
-}
-
-//=========================================================
-// Revive - bring a suspended laser sight back.
-//=========================================================
-void CEagleLaser::Revive( void )
-{
-	pev->effects &= ~EF_NODRAW;
-	SetThink( NULL );
-}
-void CEagleLaser::Precache( void )
-{
-	PRECACHE_MODEL("sprites/laserdot.spr");
-	PRECACHE_MODEL("sprites/laserbeam.spr");
-};
-
-
-void CEagle::Spawn( )
+void CEagle::Spawn( void )
 {
 
 	pev->classname = MAKE_STRING("weapon_eagle"); // hack to allow for old names
@@ -99,7 +45,7 @@ void CEagle::Spawn( )
 
 void CEagle::Precache( void )
 {
-	UTIL_PrecacheOther( "eagle_laser" );
+	UTIL_PrecacheOther( "laser_spot" );
 	PRECACHE_MODEL("models/v_desert_eagle.mdl");
 	PRECACHE_MODEL("models/w_desert_eagle.mdl");
 	PRECACHE_MODEL("models/p_desert_eagle.mdl");
@@ -171,7 +117,6 @@ void CEagle::PrimaryAttack()
 			PlayEmptySound();
 			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.2;
 		}
-
 		return;
 	}
 
@@ -180,7 +125,7 @@ void CEagle::PrimaryAttack()
 	{
 		UpdateSpot( );
 		PlayEmptySound( );
-		m_flNextPrimaryAttack = 0.15;
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase()+ 0.15;
 		return;
 	}
 
@@ -214,15 +159,17 @@ void CEagle::PrimaryAttack()
 	if (m_pEagleLaser)
 	{
 		vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, Vector( flSpread, flSpread, flSpread ), 8192, BULLET_PLAYER_357, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
-		m_flNextPrimaryAttack = 0.50;
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase()+ 0.50;
+#ifndef CLIENT_DLL
 		m_pEagleLaser->Suspend( 0.75 );
+#endif
 		m_fLaserOn = TRUE;
 	}
 	else
 	{
 		flSpread = 0.1;
 		vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, VECTOR_CONE_10DEGREES, 8192, BULLET_PLAYER_357, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
-		m_flNextPrimaryAttack = 0.20;
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase()+ 0.20;
 		m_fLaserOn = FALSE;
 	}
 
@@ -242,7 +189,9 @@ void CEagle::Reload( void )
 	{
 		if ( m_pEagleLaser && m_fEagleLaserActive )
 		{
+#ifndef CLIENT_DLL
 			m_pEagleLaser->Suspend( 1.55 );
+#endif
 			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.5;
 		}
 	}
@@ -270,7 +219,8 @@ void CEagle::UpdateSpot( void )
 	{
 		if (!m_pEagleLaser)
 		{
-			m_pEagleLaser = CEagleLaser::CreateSpotDeagle();
+			m_pEagleLaser = CLaserSpot::CreateSpot();
+			m_pEagleLaser->pev->scale = 0.5;
 		}
 
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );

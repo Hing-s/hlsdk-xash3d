@@ -205,9 +205,6 @@ void CDisplacerBall::Touch(CBaseEntity *pOther)
 
 	Circle();
 
-	// Clear beams.
-	ClearBeams();
-
 	SetThink(&CDisplacerBall::ExplodeThink);
 	pev->nextthink = gpGlobals->time + 0.3;
 }
@@ -239,6 +236,8 @@ void CDisplacerBall::Circle( void )
 
 void CDisplacerBall::ExplodeThink( void )
 {
+	ClearBeams();
+
 	pev->effects |= EF_NODRAW;
 
 	EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/displacer_teleport.wav", VOL_NORM, ATTN_NORM);
