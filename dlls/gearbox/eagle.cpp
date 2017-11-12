@@ -45,7 +45,7 @@ void CEagle::Spawn( void )
 
 void CEagle::Precache( void )
 {
-	UTIL_PrecacheOther( "laser_spot" );
+	UTIL_PrecacheOther( "laser_eagle" );
 	PRECACHE_MODEL("models/v_desert_eagle.mdl");
 	PRECACHE_MODEL("models/w_desert_eagle.mdl");
 	PRECACHE_MODEL("models/p_desert_eagle.mdl");
@@ -220,6 +220,7 @@ void CEagle::UpdateSpot( void )
 		if (!m_pEagleLaser)
 		{
 			m_pEagleLaser = CLaserSpot::CreateSpot();
+			m_pEagleLaser->pev->classname = MAKE_STRING("laser_eagle");
 			m_pEagleLaser->pev->scale = 0.5;
 		}
 
