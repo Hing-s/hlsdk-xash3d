@@ -1094,20 +1094,6 @@ private:
 	unsigned short m_usDisplacer;
 };
 
-class CEagleLaser : public CBaseEntity
-{
-	void Spawn( void );
-	void Precache( void );
-
-	int	ObjectCaps( void ) { return FCAP_DONT_SAVE; }
-
-public:
-	void Suspend( float flSuspendTime );
-	void EXPORT Revive( void );
-
-	static CEagleLaser *CreateSpotDeagle( void );
-};
-
 class CEagle : public CBasePlayerWeapon
 {
 public:
@@ -1131,7 +1117,7 @@ public:
 	void WeaponIdle( void );
 
 	void UpdateSpot( void );
-	CEagleLaser *m_pEagleLaser;
+	CLaserSpot *m_pEagleLaser;
 	int m_fEagleLaserActive;
 	virtual BOOL UseDecrement( void )
 	{ 
@@ -1144,7 +1130,6 @@ public:
 
 private:
 	int m_iShell;
-	
 
 	unsigned short m_usEagle;
 };
@@ -1458,12 +1443,12 @@ private:
 	unsigned short m_usSniper;
 };
 
-class CPortal : public CBaseEntity
+class CDisplacerBall : public CBaseEntity
 {
 public:
-	void Spawn(void);
+	void Spawn( void );
 
-	static void Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity);
+	static void Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity, Vector vecAngles);
 	static void SelfCreate(entvars_t *pevOwner, Vector vecStart);
 
 	void Touch(CBaseEntity *pOther);

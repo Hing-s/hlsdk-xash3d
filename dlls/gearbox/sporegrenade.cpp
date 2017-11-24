@@ -78,12 +78,15 @@ void CSpore :: Spawn( void )
 	UTIL_SetSize(pev, Vector( 0, 0, 0), Vector(0, 0, 0));
 	UTIL_SetOrigin( pev, pev->origin );
 	UTIL_MakeVectors( pev->angles );
-
-	pev->gravity = 0.5;
+	if( m_bIsAI )
+	{
+		pev->gravity = 0.5;
+		pev->friction = 0.7;
+	}
 	Glow();
 
 	if (m_iPrimaryMode)
-		SetTouch( &CSpore::ExplodeTouch );
+		SetTouch( &CSpore::RocketTouch );
 	else
 		SetTouch( &CSpore::BounceTouch );
 
@@ -121,20 +124,16 @@ void CSpore :: Glow( void )
 
 void CSpore :: FlyThink( void  )
 {
-	pev->nextthink = gpGlobals->time + 0.001;
- 
-	TraceResult tr;
- 
-	UTIL_TraceLine( pev->origin, pev->origin + pev->velocity * 10, dont_ignore_monsters, ENT( pev ), &tr );
+	Vector vecEnd = pev->origin.Normalize();
 
 	MESSAGE_BEGIN( MSG_PAS, SVC_TEMPENTITY, pev->origin );
 		WRITE_BYTE( TE_SPRITE_SPRAY );		// This makes a dynamic light and the explosion sprites/sound
-		WRITE_COORD( pev->origin.x + RANDOM_LONG(-5,5));	// Send to PAS because of the sound
-		WRITE_COORD( pev->origin.y + RANDOM_LONG(-5,5) );
-		WRITE_COORD( pev->origin.z + RANDOM_LONG(-5,5));
-		WRITE_COORD( tr.vecPlaneNormal.x );
-		WRITE_COORD( tr.vecPlaneNormal.y );
-		WRITE_COORD( tr.vecPlaneNormal.z );
+		WRITE_COORD( pev->origin.x );	// Send to PAS because of the sound
+		WRITE_COORD( pev->origin.y );
+		WRITE_COORD( pev->origin.z );
+		WRITE_COORD( vecEnd.x );
+		WRITE_COORD( vecEnd.y );
+		WRITE_COORD( vecEnd.z );
 		WRITE_SHORT( m_iDrips );
 		WRITE_BYTE( 2 ); // count
 		WRITE_BYTE( 20 ); // speed
@@ -146,44 +145,43 @@ void CSpore :: FlyThink( void  )
 		if (pev->dmgtime <= gpGlobals->time)
 			Explode();
 	}
+	pev->nextthink = gpGlobals->time + 0.03;
 }
-//=========================================================
+
+void CSpore::RocketTouch( CBaseEntity *pOther )
+{
+	if(pOther->pev->takedamage == DAMAGE_YES )
+	{
+		entvars_t *pevOwner;
+		pevOwner = VARS( pev->owner );
+
+		pOther->TakeDamage( pev, pevOwner, pev->dmg, DMG_GENERIC );
+	}
+
+	Explode();
+}
 
 void CSpore::BounceTouch( CBaseEntity *pOther )
 {
-	if ( pOther->pev->flags & ( FL_MONSTER | FL_CLIENT ) )
+	if ( pOther->pev->takedamage != DAMAGE_YES )
 	{
-		Explode();
-		return;
-	}
-
-	if ( UTIL_PointContents(pev->origin) == CONTENT_SKY )
-	{
-		UTIL_Remove( m_pSprite );
-		UTIL_Remove( this );
-		return;
-	}
-
-	if (pev->flags & FL_ONGROUND)
-	{
-		// add a bit of static friction
-		pev->velocity = pev->velocity * 0.7;
-
-		pev->sequence = RANDOM_LONG( 1, 1 );
-	}
-
-	if( pev->flags & FL_SWIM )
-	{
-		pev->velocity = pev->velocity * 0.5;
+		if( pev->flags & FL_SWIM )
+		{
+			pev->velocity = pev->velocity * 0.5;
+			pev->sequence = 1;
+		}
+		else
+			BounceSound(); // play bounce sound
 	}
 	else
 	{
-		// play bounce sound
-		BounceSound();
-	}
+		entvars_t *pevOwner;
+		pevOwner = VARS( pev->owner );
 
-    if(m_bIsAI)
-        pev->velocity = pev->velocity / 2.8;
+		pOther->TakeDamage( pev, pevOwner, pev->dmg, DMG_GENERIC );
+
+		Explode();
+	}
 
 	pev->framerate = pev->velocity.Length() / 200.0;
 	if (pev->framerate > 1.0)
@@ -192,7 +190,6 @@ void CSpore::BounceTouch( CBaseEntity *pOther )
 		pev->framerate = 0;
 
 }
-//=========================================================
 
 void CSpore :: BounceSound( void )
 {
@@ -209,19 +206,6 @@ void CSpore :: BounceSound( void )
 			break;
 	}
 }
-//=========================================================
-
-void CSpore::ExplodeTouch( CBaseEntity *pOther )
-{
-	if ( UTIL_PointContents(pev->origin) == CONTENT_SKY )
-	{
-		UTIL_Remove( m_pSprite );
-		UTIL_Remove( this );
-		return;
-	}
-	Explode();
-}
-//=========================================================
 
 void CSpore::Explode( void )
 {
@@ -259,7 +243,7 @@ void CSpore::Explode( void )
 		WRITE_COORD( tr.vecPlaneNormal.z );
 		WRITE_SHORT( m_iDrips );
 		WRITE_BYTE( 2  ); // count
-		WRITE_BYTE( 20 ); // speed
+		WRITE_BYTE( 40 ); // speed
 		WRITE_BYTE( 80 );
 	MESSAGE_END();
 

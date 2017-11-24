@@ -42,6 +42,7 @@ LINK_ENTITY_TO_CLASS( weapon_rpg, CRpg )
 #ifndef CLIENT_DLL
 
 LINK_ENTITY_TO_CLASS( laser_spot, CLaserSpot )
+LINK_ENTITY_TO_CLASS( laser_eagle, CLaserSpot );
 
 //=========================================================
 //=========================================================
