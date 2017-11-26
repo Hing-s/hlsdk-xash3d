@@ -121,29 +121,31 @@ void CShockrifle::Holster(int skiplocal /* = 0 */)
 	{
 		m_pPlayer->m_rgAmmo[PrimaryAmmoIndex()] = 1;
 	}
+	ClearBeams();
 }
 
 
 void CShockrifle::PrimaryAttack()
 {
 	Reload();
-
 	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
-	{
 		return;
-	}
+
+	CreateChargeEffect();
 
 	if (m_pPlayer->pev->waterlevel == 3)
 	{
 #ifndef CLIENT_DLL
-		RadiusDamage(m_pPlayer->pev->origin, m_pPlayer->pev, m_pPlayer->pev, 300, 144, CLASS_NONE, DMG_SHOCK | DMG_ALWAYSGIB );
+		int attenuation = 150 * m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType];
+		int dmg = 100 * m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType];
+		EMIT_SOUND_DYN( ENT(pev), CHAN_WEAPON, "weapons/shock_discharge.wav", 1, 0.0, 0, PITCH_NORM);
+		RadiusDamage(m_pPlayer->pev->origin, m_pPlayer->pev, m_pPlayer->pev, dmg, attenuation, CLASS_NONE, DMG_SHOCK | DMG_ALWAYSGIB );
 #endif
 		return;
 	}
 
 #ifndef CLIENT_DLL
 	Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
-	anglesAim.x		= -anglesAim.x;
 	UTIL_MakeVectors(m_pPlayer->pev->v_angle);
 
 	Vector vecSrc;
@@ -172,7 +174,7 @@ void CShockrifle::PrimaryAttack()
 	flags = 0;
 #endif
 
-	PLAYBACK_EVENT_FULL(flags, m_pPlayer->edict(), m_usShockFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0.0, 0.0, TRUE, 0, 0, 0);
+	PLAYBACK_EVENT_FULL(flags, m_pPlayer->edict(), m_usShockFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0.0, 0.0, 0, 0, 0, 0);
 
 	// player "shoot" animation
 	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
@@ -183,6 +185,8 @@ void CShockrifle::PrimaryAttack()
 	{
 		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.2;
 	}
+	SetThink( &CShockrifle::ClearBeams );
+	pev->nextthink = gpGlobals->time + 0.08;
 
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat(m_pPlayer->random_seed, 10, 15);
 }
@@ -225,3 +229,44 @@ void CShockrifle::WeaponIdle(void)
 }
 
 #endif
+void CShockrifle::CreateChargeEffect( void )
+{
+#ifndef CLIENT_DLL
+	if( g_pGameRules->IsMultiplayer())
+		return;
+	int iBeam = 0;
+
+	for( int i = 2; i < 5; i++)
+	{
+		if( !m_pBeam[iBeam] )
+			m_pBeam[iBeam] = CBeam::BeamCreate("sprites/lgtning.spr", 16);
+		m_pBeam[iBeam]->EntsInit( m_pPlayer->entindex(), m_pPlayer->entindex() );
+		m_pBeam[iBeam]->SetStartAttachment(1);
+		m_pBeam[iBeam]->SetEndAttachment(i);
+		m_pBeam[iBeam]->SetNoise( 75 );
+		m_pBeam[iBeam]->pev->scale= 10;
+		m_pBeam[iBeam]->SetColor( 0, 253, 253 );
+		m_pBeam[iBeam]->SetScrollRate( 30 );
+		m_pBeam[iBeam]->SetBrightness( 190 );
+		iBeam++;
+	}
+#endif
+}
+
+void CShockrifle::ClearBeams( void )
+{
+#ifndef CLIENT_DLL
+	if( g_pGameRules->IsMultiplayer())
+		return;
+
+	for( int i = 0; i < 3; i++ )
+	{
+		if( m_pBeam[i] )
+		{
+			UTIL_Remove( m_pBeam[i] );
+			m_pBeam[i] = NULL;
+		}
+	}
+	SetThink( NULL );
+#endif
+}

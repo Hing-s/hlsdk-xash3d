@@ -137,8 +137,6 @@ void CPipeWrench::SecondaryAttack(void)
 
 	m_flNextPrimaryAttack = m_flNextSecondaryAttack = GetNextAttackDelay(1.0f);
 	pev->nextthink = UTIL_WeaponTimeBase() + 1.0f;
-
-	ALERT( at_console, "CPipeWrench::SecondaryAttack\n" );
 }
 
 
@@ -162,8 +160,6 @@ void CPipeWrench::ItemPostFrame(void)
 			{
 			case FIRESTATE_WINDUP:
 			{
-				ALERT(at_console, "CPipeWrench::FIRESTATE_WINDUP\n");
-
 				m_iFirestate = FIRESTATE_WINDLOOP;
 
 				SendWeaponAnim(PIPEWRENCH_ATTACKBIGLOOP);
@@ -178,15 +174,12 @@ void CPipeWrench::ItemPostFrame(void)
 
 			case FIRESTATE_WINDLOOP:
 			{
-				ALERT(at_console, "CPipeWrench::FIRESTATE_WINDLOOP\n");
 				if (!(m_pPlayer->pev->button & IN_ATTACK2))
 				{
-					ALERT(at_console, "Releasing CPipeWrench\n");
 					m_iFirestate = FIRESTATE_BIGHIT;
 				}
 				else
 				{
-					ALERT(at_console, "Holding CPipeWrench\n");
 					SendWeaponAnim(PIPEWRENCH_ATTACKBIGLOOP);
 				}
 				m_flNextPrimaryAttack = m_flNextSecondaryAttack = GetNextAttackDelay(0.01f);
@@ -195,8 +188,6 @@ void CPipeWrench::ItemPostFrame(void)
 
 			case FIRESTATE_BIGHIT:
 			{
-				ALERT(at_console, "CPipeWrench::FIRESTATE_BIGHIT\n");
-
 				Swing(1, FALSE);
 
 				m_iFirestate = FIRESTATE_NONE;
@@ -373,8 +364,6 @@ int CPipeWrench::Swing(int fFirst, BOOL fIsPrimary)
 				flDamage = gSkillData.plrDmgPWrench / 2;
 			}
 		}
-
-		ALERT(at_console, "PipeWrench damage: %f\n", flDamage);
 
 		// Send trace attack to player.
 		pEntity->TraceAttack(m_pPlayer->pev, flDamage, gpGlobals->v_forward, &tr, DMG_CLUB);

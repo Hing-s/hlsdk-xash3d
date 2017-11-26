@@ -1856,54 +1856,6 @@ void EV_Displacer( event_args_t *args )
 	default:
 		break;
 	}
-
-	int fPlayEffects = args->bparam1;
-	if( fPlayEffects )
-	{
-		int iBeamModelIndex = gEngfuncs.pEventAPI->EV_FindModelIndex( "sprites/lgtning.spr" );
-
-		cl_entity_t *vm = gEngfuncs.GetViewModel();
-		if( vm )
-		{
-			// Valid viewmodel.
-			gEngfuncs.pEventAPI->EV_SetUpPlayerPrediction( false, true );
-
-			int iStartAttach, iEndAttach;
-
-			// Store off the old count
-			gEngfuncs.pEventAPI->EV_PushPMStates();
-			for( int i = 2; i < 5; i++ )
-			{
-				if( i < 4 )
-				{
-					iStartAttach = i;
-					iEndAttach = i + 1;
-				}
-				else
-				{
-					iStartAttach = 4;
-					iEndAttach = 2;
-				}
-				BEAM *pBeam = gEngfuncs.pEfxAPI->R_BeamEnts(
-					args->entindex | ( iStartAttach << 12 ),
-					args->entindex | ( iEndAttach << 12 ),
-					iBeamModelIndex,
-					0.9,
-					1.6,
-					0,
-					64,
-					0,
-					10,
-					25,
-					96,
-					128,
-					16 );
-
-			}
-			gEngfuncs.pEventAPI->EV_PopPMStates();
-		}
-	}
-
 }
 //======================
 //	    DISPLACER END 
@@ -2266,7 +2218,6 @@ void EV_ShockFire( event_args_t *args )
 
 	VectorCopy( args->origin, origin );
 
-	int fPlayEffects = args->iparam1;
 
 	//Only play the weapon anims if I shot it.
 	if( EV_IsLocal( idx ) )
@@ -2277,56 +2228,6 @@ void EV_ShockFire( event_args_t *args )
 
 	// Play fire sound.
 	gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_WEAPON, "weapons/shock_fire.wav", 1, ATTN_NORM, 0, 100 );
-
-	if( fPlayEffects ) // Play weapon effects.
-	{
-		int iBeamModelIndex = gEngfuncs.pEventAPI->EV_FindModelIndex( "sprites/lgtning.spr" );
-
-		cl_entity_t *vm = gEngfuncs.GetViewModel();
-		if( vm )
-		{
-			// Valid viewmodel.
-
-			gEngfuncs.pEventAPI->EV_SetUpPlayerPrediction( false, true );
-
-			// Store off the old count
-			gEngfuncs.pEventAPI->EV_PushPMStates();
-
-			int iEndAttach;
-
-			for( int i = 1; i < 10; i++ )
-			{
-				if( i <= 3 )
-					iEndAttach = i;
-				else if( i == 4 || i == 5 )
-					iEndAttach = 1;
-				else if( i == 6 || i == 7 )
-					iEndAttach = 2;
-				else if( i == 8 || i == 9 )
-					iEndAttach = 3;
-				iEndAttach++;
-				BEAM *pBeam = gEngfuncs.pEfxAPI->R_BeamEnts(
-					args->entindex | ( 1 << 12 ),
-					args->entindex | ( iEndAttach << 12 ),
-					iBeamModelIndex,
-					0.2,
-					1.1f,
-					4,
-					230 + gEngfuncs.pfnRandomFloat( 20, 30 ),
-					10,
-					0,
-					10,
-					0.0f,
-					1.0f,
-					1.0f );
-
-				if( pBeam )
-					pBeam->flags |= ( FBEAM_SHADEIN | FBEAM_SHADEOUT );
-			}
-
-			gEngfuncs.pEventAPI->EV_PopPMStates();
-		}
-	}
 }
 //======================
 //	   SHOCKRIFLE END

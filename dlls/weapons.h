@@ -1055,7 +1055,7 @@ public:
 #endif
 	void Spawn(void);
 	void Precache(void);
-	int iItemSlot(void) { return 5; }
+	int iItemSlot(void) { return 4; }
 	int GetItemInfo(ItemInfo *p);
 	int AddToPlayer(CBasePlayer *pPlayer);
 	void PrimaryAttack(void);
@@ -1064,7 +1064,7 @@ public:
 	void Holster(int skiplocal = 0);
 	void WeaponIdle(void); 
 
-	BOOL PlayEmptySound(void);//
+	BOOL PlayEmptySound(void);
 
 	virtual BOOL UseDecrement(void)
 	{
@@ -1075,24 +1075,23 @@ public:
 #endif
 	}
 
-	int		m_iFireMode;
-
-	CBaseEntity* m_hTargetEarth;
-	CBaseEntity* m_hTargetXen;
-
 	void UseAmmo(int count);
 	BOOL CanFireDisplacer( int count ) const;
 
 	enum DISPLACER_FIREMODE { FIREMODE_FORWARD = 1, FIREMODE_BACKWARD };
-private:
-	void ClearSpin( void );
-	void SpinUp( void );
-	void Teleport( void );
-	void Displace( void );
 
+	void ClearSpin( void );
+	void EXPORT SpinUp( void );
+	void EXPORT Teleport( void );
+	void EXPORT Displace( void );
+	void LightningEffect( void );
+	void ClearBeams( void );
 private:
+	CBeam *m_pBeam[3];
+	int m_iFireMode;
 	unsigned short m_usDisplacer;
 };
+
 
 class CEagle : public CBasePlayerWeapon
 {
@@ -1385,7 +1384,8 @@ public:
 	void Holster(int skiplocal = 0);
 	void Reload(void);
 	void WeaponIdle(void);
-	
+	void CreateChargeEffect(void);
+	void ClearBeams(void);
 	virtual BOOL UseDecrement(void)
 	{
 #if defined( CLIENT_WEAPONS )
@@ -1396,6 +1396,7 @@ public:
 	}
 private:
 	unsigned short m_usShockFire;
+	CBeam* m_pBeam[4];
 };
 
 class CSniperrifle : public CBasePlayerWeapon
@@ -1442,7 +1443,9 @@ public:
 private:
 	unsigned short m_usSniper;
 };
-
+//=========================================================
+// Displacement field
+//=========================================================
 class CDisplacerBall : public CBaseEntity
 {
 public:
@@ -1453,6 +1456,7 @@ public:
 
 	void Touch(CBaseEntity *pOther);
 	void EXPORT ExplodeThink( void );
+	void EXPORT KillThink( void );
 	void Circle( void );
 
 	virtual int		Save(CSave &save);
@@ -1461,7 +1465,7 @@ public:
 
 	CBeam* m_pBeam[8];
 
-	void FlyThink( void );
+	void EXPORT FlyThink( void );
 	void ClearBeams( void );
 	void ArmBeam( int iSide );
 

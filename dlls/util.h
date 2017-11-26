@@ -568,3 +568,4 @@ float UTIL_SharedRandomFloat( unsigned int seed, float low, float high );
 
 float UTIL_WeaponTimeBase( void );
 void UTIL_CleanSpawnPoint( Vector origin, float radius );
+void UTIL_MuzzleLight( Vector vecSrc, float flRadius, byte r, byte g, byte b, float flTime, float flDecay );
