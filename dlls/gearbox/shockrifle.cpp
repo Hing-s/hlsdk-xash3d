@@ -139,6 +139,7 @@ void CShockrifle::PrimaryAttack()
 		int attenuation = 150 * m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType];
 		int dmg = 100 * m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType];
 		EMIT_SOUND_DYN( ENT(pev), CHAN_WEAPON, "weapons/shock_discharge.wav", 1, 0.0, 0, PITCH_NORM);
+		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] = 0;
 		RadiusDamage(m_pPlayer->pev->origin, m_pPlayer->pev, m_pPlayer->pev, dmg, attenuation, CLASS_NONE, DMG_SHOCK | DMG_ALWAYSGIB );
 #endif
 		return;

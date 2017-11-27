@@ -672,7 +672,7 @@ LINK_ENTITY_TO_CLASS(func_tankcontrols_of, CFuncTankControlsOF)
 //=========================================================
 // CFuncTankOF
 //=========================================================
-class CFuncTankOF : public CFuncTank
+class CFuncTankOF : public CFuncTankGun
 {
 public:
 
