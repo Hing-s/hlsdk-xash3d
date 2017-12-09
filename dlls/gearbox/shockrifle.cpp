@@ -131,22 +131,22 @@ void CShockrifle::PrimaryAttack()
 	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 		return;
 
-	CreateChargeEffect();
-
 	if (m_pPlayer->pev->waterlevel == 3)
 	{
 #ifndef CLIENT_DLL
 		int attenuation = 150 * m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType];
 		int dmg = 100 * m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType];
-		EMIT_SOUND_DYN( ENT(pev), CHAN_WEAPON, "weapons/shock_discharge.wav", 1, 0.0, 0, PITCH_NORM);
+		EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/shock_discharge.wav", VOL_NORM, ATTN_NORM);
 		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] = 0;
 		RadiusDamage(m_pPlayer->pev->origin, m_pPlayer->pev, m_pPlayer->pev, dmg, attenuation, CLASS_NONE, DMG_SHOCK | DMG_ALWAYSGIB );
 #endif
 		return;
 	}
+	CreateChargeEffect();
 
 #ifndef CLIENT_DLL
 	Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
+	anglesAim.x = -anglesAim.x;
 	UTIL_MakeVectors(m_pPlayer->pev->v_angle);
 
 	Vector vecSrc;
