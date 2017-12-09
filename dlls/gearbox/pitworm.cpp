@@ -255,6 +255,12 @@ TYPEDESCRIPTION	CPitWorm::m_SaveData[] =
         DEFINE_FIELD(CPitWorm, m_flNextAttackTime, FIELD_TIME),
         DEFINE_FIELD(CPitWorm, m_flNextIdleSoundTime, FIELD_TIME),
         DEFINE_FIELD(CPitWorm, m_fActivated, FIELD_BOOLEAN),
+        DEFINE_FIELD(CPitWorm, m_iLaserHitTimes, FIELD_INTEGER),
+        DEFINE_FIELD(CPitWorm, m_flDamage, FIELD_FLOAT),
+        DEFINE_FIELD(CPitWorm, m_fBlink, FIELD_BOOLEAN),
+        DEFINE_FIELD(CPitWorm, m_flPlayerDamage, FIELD_FLOAT),
+        DEFINE_FIELD(CPitWorm, m_vecEmemyPos, FIELD_VECTOR),
+        DEFINE_FIELD(CPitWorm, m_flNextBlink, FIELD_FLOAT),
 };
 
 IMPLEMENT_SAVERESTORE(CPitWorm, CBaseMonster)
