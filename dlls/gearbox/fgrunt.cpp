@@ -1717,7 +1717,7 @@ void CHFGrunt :: HandleAnimEvent( MonsterEvent_t *pEvent )
 			}
 			else if (FBitSet( pev->weapons, FGRUNT_M4A1 ))
 			{
-				 DropItem( "weapon_sniperrifle", vecGunPos, vecGunAngles );
+				 DropItem( "weapon_9mmAR", vecGunPos, vecGunAngles );
 			}
 			else
 			{
