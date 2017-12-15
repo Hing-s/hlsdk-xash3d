@@ -423,9 +423,9 @@ void CDisplacer::SecondaryAttack(void)
 
 	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
 
-	m_iFireMode = FIREMODE_BACKWARD;
+    m_iFireMode = FIREMODE_BACKWARD;
 
-	SetThink (&CDisplacer::SpinUp);
+    SetThink (&CDisplacer::SpinUp);
 
 	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 4.0;
 	pev->nextthink = gpGlobals->time;
@@ -574,100 +574,106 @@ void CDisplacer::Displace( void )
 //=========================================================
 // Purpose:
 //=========================================================
-void CDisplacer::Teleport( void )
+void CDisplacer::Teleport()
 {
-	ClearSpin();
-	ASSERT(m_hTargetEarth != NULL && m_hTargetXen);
+    CBaseEntity *pTarget;
+    edict_t *pEnt;
+    TraceResult tr;
+
+    ClearSpin();
 #ifndef CLIENT_DLL
-	edict_t *pEnt = NULL;
-	CBaseEntity *pTarget = NULL;
+    EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "weapons/displacer_spin.wav", 0, 0, 32, 100 );
 
-	if( g_pGameRules->IsMultiplayer() && !g_pGameRules->IsCoOp() )
-	{
-		// Randomize the destination in multiplayer
-		for( int i = RANDOM_LONG( 1, 5 ); i > 0; i-- )
-			pEnt = FIND_ENTITY_BY_CLASSNAME(pEnt, "info_player_deathmatch");
-		if( pEnt )
-			pTarget = GetClassPtr((CBaseEntity *)VARS(pEnt));
-	}
-	else
-		pTarget = (!m_pPlayer->m_fInXen) ? m_hTargetXen : m_hTargetEarth;
-		Vector tmp = pTarget->pev->origin;
+    if(!g_pGameRules->IsMultiplayer() || g_pGameRules->IsCoOp())
+    {
+        pTarget = UTIL_FindEntityByString(0, "classname", "info_displacer_xen_target");
+    }
+    else
+    {
+        // Randomize the destination in multiplayer
+        for( int i = RANDOM_LONG( 1, 5 ); i > 0; i-- )
+            pEnt = FIND_ENTITY_BY_CLASSNAME(pEnt, "info_player_deathmatch");
+        if( pEnt )
+            pTarget = GetClassPtr((CBaseEntity *)VARS(pEnt));
+    }
 
-	if(pTarget && /*HACK*/(tmp != Vector(0,0,0)/*HACK*/))
-	{
+    if(pTarget && g_engfuncs.pfnEntOffsetOfPEntity(pTarget->edict()))
+    {
 #ifndef CLIENT_DLL
-		if( m_pPlayer->IsOnRope() )
-		{
-			m_pPlayer->pev->movetype = MOVETYPE_WALK;
-			m_pPlayer->pev->solid = SOLID_SLIDEBOX;
-			m_pPlayer->SetOnRopeState( false );
-			m_pPlayer->GetRope()->DetachObject();
-			m_pPlayer->SetRope( NULL );
-		}
-#endif		
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase();
-
-		UseAmmo(DISPLACER_SECONDARY_USAGE);
-
-		UTIL_CleanSpawnPoint( tmp, 50 );
-
-		EMIT_SOUND( edict(), CHAN_BODY, "weapons/displacer_self.wav", 1, ATTN_NORM );
-	 	CDisplacerBall::SelfCreate(m_pPlayer->pev, m_pPlayer->pev->origin);
-
-		// make origin adjustments (origin in center, not at feet)
-		tmp.z -= m_pPlayer->pev->mins.z +5;
-		tmp.z++;
-
-
-		m_pPlayer->pev->flags &= ~FL_ONGROUND;
-
-		UTIL_SetOrigin(m_pPlayer->pev, tmp);
-
-		m_pPlayer->pev->angles = pTarget->pev->angles;
-
-		m_pPlayer->pev->v_angle = pTarget->pev->angles;
-
-		m_pPlayer->pev->fixangle = TRUE;
-		m_pPlayer->pev->velocity = m_pPlayer->pev->basevelocity = g_vecZero;
-
-		m_pPlayer->m_fInXen = !m_pPlayer->m_fInXen;
-		if( !g_pGameRules->IsMultiplayer())
-		{
-			if (m_pPlayer->m_fInXen)
-				m_pPlayer->pev->gravity = 0.5;
-			else
-				m_pPlayer->pev->gravity = 1.0;
-		}
-	}
-	else
-	{
-		EMIT_SOUND( edict(), CHAN_BODY, "buttons/button10.wav", 1, ATTN_NORM );
-		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 3.0;
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.9;
-	}
+        if( m_pPlayer->IsOnRope() )
+        {
+            m_pPlayer->pev->movetype = MOVETYPE_WALK;
+            m_pPlayer->pev->solid = SOLID_SLIDEBOX;
+            m_pPlayer->SetOnRopeState( false );
+            m_pPlayer->GetRope()->DetachObject();
+            m_pPlayer->SetRope( NULL );
+        }
 #endif
-		int flags;
+
+        m_flTimeWeaponIdle = UTIL_WeaponTimeBase();
+
+        UseAmmo(DISPLACER_SECONDARY_USAGE);
+
+        EMIT_SOUND( edict(), CHAN_BODY, "weapons/displacer_self.wav", 1, ATTN_NORM );
+        CDisplacerBall::SelfCreate(m_pPlayer->pev, m_pPlayer->pev->origin);
+
+        // make origin adjustments (origin in center, not at feet)
+
+        m_pPlayer->pev->flags &= ~FL_ONGROUND;
+
+        UTIL_TraceHull(pTarget->pev->origin, pTarget->pev->origin, dont_ignore_monsters, human_hull, NULL, &tr);
+
+        if(tr.fAllSolid && tr.fStartSolid)
+            UTIL_SetOrigin(m_pPlayer->pev, pTarget->pev->origin+Vector(0,0,72));
+        else
+            UTIL_SetOrigin(m_pPlayer->pev, pTarget->pev->origin);
+
+        m_pPlayer->pev->angles = pTarget->pev->angles;
+
+        m_pPlayer->pev->v_angle = pTarget->pev->angles;
+
+        m_pPlayer->pev->fixangle = TRUE;
+        m_pPlayer->pev->velocity = m_pPlayer->pev->basevelocity = g_vecZero;
+
+        m_pPlayer->m_fInXen = TRUE;
+
+        if( !g_pGameRules->IsMultiplayer())
+        {
+            if (m_pPlayer->m_fInXen)
+                m_pPlayer->pev->gravity = 0.5;
+            else
+                m_pPlayer->pev->gravity = 1.0;
+        }
+    }
+    else
+    {
+        EMIT_SOUND( edict(), CHAN_BODY, "buttons/button10.wav", 1, ATTN_NORM );
+        m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 3.0;
+        m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.9;
+    }
+#endif
+
+        int flags;
 #if defined( CLIENT_WEAPONS )
-		flags = FEV_NOTHOST;
+        flags = FEV_NOTHOST;
 #else
-		flags = 0;
+        flags = 0;
 #endif
-		// Used to play teleport sound.
-		PLAYBACK_EVENT_FULL(
-			flags,
-			m_pPlayer->edict(),
-			m_usDisplacer,
-			0.0,
-			(float *)&g_vecZero,
-			(float *)&g_vecZero,
-			0.0,
-			0.0,
-			0.0,
-			FIREMODE_BACKWARD,
-			0,
-			0);
-	SetThink( NULL );
+        // Used to play teleport sound.
+        PLAYBACK_EVENT_FULL(
+            flags,
+            m_pPlayer->edict(),
+            m_usDisplacer,
+            0.0,
+            (float *)&g_vecZero,
+            (float *)&g_vecZero,
+            0.0,
+            0.0,
+            0.0,
+            FIREMODE_BACKWARD,
+            0,
+            0);
+    SetThink( NULL );
 }
 
 //=========================================================
