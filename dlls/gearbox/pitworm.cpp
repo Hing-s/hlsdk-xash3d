@@ -872,16 +872,32 @@ void CPitWorm::HuntThink(void)
 
         // Update the eye glow.
         EyeUpdate();
+        
+        if(!m_fActivated)
+        {
+        	if(!m_hEnemy)
+        	{
+        		Look(4096);
+        		m_hEnemy = BestVisibleEnemy();
+        	}
+        	else
+        	{
+        		if((pev->origin - m_hEnemy->pev->origin).Length() <= 936)
+        		{
+        			EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "pitworm/pit_worm_alert(scream).wav", 1, 0.8, 0, 100);
+        			pev->sequence = LookupSequence("scream");
+        			m_fActivated = TRUE;
+        		}
+        		else
+        		{
+        			pev->nextthink = gpGlobals->time + 0.01f;
+        			return;
+        		}
+        	}
+        }
 
         if (m_hEnemy)
         {
-                if(!m_fActivated)
-                {
-                    EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "pitworm/pit_worm_alert(scream).wav", 1, 0.8, 0, 100);
-                    pev->sequence = LookupSequence("scream");
-                    m_fActivated = TRUE;
-                }
-
                 // Update body controllers.
                 UpdateBodyControllers();
 
@@ -1074,6 +1090,9 @@ int CPitWorm::CanPlaySequence(BOOL fDisregardState)
 //=========================================================
 void CPitWorm::NextActivity()
 {
+    	if(!m_fActivated)
+	     	return;
+		
         UTIL_MakeAimVectors(pev->angles);
 
         Vector forward = gpGlobals->v_forward;
@@ -1322,6 +1341,8 @@ void CPitWorm::UpdateBodyControllers(void)
 //=========================================================
 void CPitWorm::CreateBeam(const Vector& src, const Vector& target, int width)
 {
+    	pev->skin = 0;
+    	
         m_pBeam = CBeam::BeamCreate("sprites/gworm_beam_02.spr", width);
         if (m_pBeam)
         {
