@@ -680,10 +680,25 @@ void CGeneWorm::DyingThink(void)
 
     if(pev->deadflag == DEAD_DEAD)
     {
-        UTIL_Remove(this);
+        UTIL_Remove( this );
+        return;
     }
 
     if(pev->deadflag == DEAD_DYING)
+    {
+         pev->renderamt--;
+         if(gpGlobals->time - m_flDeathStart >= 15)
+         {
+             if((entity = UTIL_FindEntityByClassname(0, "player")) != NULL)
+             {
+                 UTIL_ScreenFade(entity, Vector(0,255,0), 15, 15, 255, 0);
+                 entity->pev->flags &= ~FL_FROZEN;
+                 FireTargets("GeneWormTeleport", entity, entity, USE_TOGGLE, 0);
+              }
+         }
+    }
+
+    if(pev->deadflag == DEAD_NO)
     {
         pev->frame = 0;
         pev->sequence = LookupSequence("death");
@@ -692,32 +707,13 @@ void CGeneWorm::DyingThink(void)
 
         pev->renderfx = 0;
         pev->rendermode = kRenderTransTexture;
-        pev->renderamt = 0;
+        pev->renderamt = 255;
         pev->solid = SOLID_NOT;
 
         EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "geneworm/geneworm_death.wav", 1, 0.1, 0, 100);
-        UTIL_SetOrigin(pev, pev->origin + Vector(-400,1000,0));
 
-        if(gpGlobals->time - m_flDeathStart >= 4)
-        {
-            FireTargets("GeneWormDead", this, this, USE_TOGGLE, 0);
+        FireTargets("GeneWormDead", this, this, USE_TOGGLE, 0);
 
-            if(gpGlobals->time - m_flDeathStart >= 25)
-            {
-                if((entity = UTIL_FindEntityByClassname(0, "player")) != NULL)
-                {
-                    UTIL_ScreenFade(entity, Vector(0,255,0), 15, 15, 255, 0);
-                    entity->pev->flags &= ~FL_FROZEN;
-
-                    if(gpGlobals->time - m_flDeathStart >= 28)
-                        CLIENT_COMMAND(ENT(entity->pev), "map of7a0\n");
-                }
-            }
-        }
-    }
-
-    if(pev->deadflag == DEAD_NO)
-    {
         m_flDeathStart = gpGlobals->time;
         pev->deadflag = DEAD_DYING;
 
@@ -742,10 +738,10 @@ void CGeneWorm::DyingThink(void)
 
     if((entity = UTIL_FindEntityByClassname(0, "monster_shocktrooper")) != NULL)
     {
-        UTIL_Remove(entity);
+        entity->SUB_StartFadeOut();
 
         while((entity = UTIL_FindEntityByClassname(entity, "monster_shocktrooper")))
-            UTIL_Remove(entity);
+            entity->SUB_StartFadeOut();
     }
 }
 

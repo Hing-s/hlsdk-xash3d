@@ -1853,13 +1853,73 @@ void CBaseTrigger::TeleportTouch( CBaseEntity *pOther )
 	pevToucher->velocity = pevToucher->basevelocity = g_vecZero;
 }
 
+
+void CBaseTrigger::TeleportUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+    entvars_t *pevToucher = pActivator->pev;
+	edict_t	*pentTarget = NULL;
+
+	// Only teleport monsters or clients
+	if( !FBitSet( pevToucher->flags, FL_CLIENT | FL_MONSTER ) )
+		return;
+
+	if( !UTIL_IsMasterTriggered( m_sMaster, pActivator ) )
+		return;
+ 	
+	if( !( pev->spawnflags & SF_TRIGGER_ALLOWMONSTERS ) )
+	{
+		// no monsters allowed!
+		if( FBitSet( pevToucher->flags, FL_MONSTER ) )
+		{
+			return;
+		}
+	}
+
+	if( ( pev->spawnflags & SF_TRIGGER_NOCLIENTS ) )
+	{
+		// no clients allowed
+		if( pActivator->IsPlayer() )
+		{
+			return;
+		}
+	}
+
+	pentTarget = FIND_ENTITY_BY_TARGETNAME( pentTarget, STRING( pev->target ) );
+	if( FNullEnt( pentTarget ) )
+	   return;	
+
+	Vector tmp = VARS( pentTarget )->origin;
+
+	if( pActivator->IsPlayer() )
+	{
+		tmp.z -= pActivator->pev->mins.z;// make origin adjustments in case the teleportee is a player. (origin in center, not at feet)
+	}
+
+	tmp.z++;
+
+	pevToucher->flags &= ~FL_ONGROUND;
+
+	UTIL_SetOrigin( pevToucher, tmp );
+
+	pevToucher->angles = pentTarget->v.angles;
+
+	if( pActivator->IsPlayer() )
+	{
+		pevToucher->v_angle = pentTarget->v.angles;
+	}
+
+	pevToucher->fixangle = TRUE;
+	pevToucher->velocity = pevToucher->basevelocity = g_vecZero;
+}
+
+
 LINK_ENTITY_TO_CLASS( trigger_teleport, CTriggerTeleport )
 
 void CTriggerTeleport::Spawn( void )
 {
 	InitTrigger();
-
 	SetTouch( &CBaseTrigger::TeleportTouch );
+    SetUse( &CBaseTrigger::TeleportUse );
 }
 
 LINK_ENTITY_TO_CLASS( info_teleport_destination, CPointEntity )
