@@ -201,7 +201,7 @@ void CMortarShell::FlyThink()
     if(pev->velocity.z < 20 && !m_iSoundedOff)
     {
         m_iSoundedOff = TRUE;
-        EMIT_SOUND_DYN(pev->pContainingEntity, 2, "weapons/ofmortar.wav", 1, 0, 0, 100);
+        EMIT_SOUND_DYN(ENT(pev), 2, "weapons/ofmortar.wav", 1, 0, 0, 100);
     }
 
     pev->nextthink = gpGlobals->time + 0.1;
@@ -380,7 +380,8 @@ void COp4Mortar::MortarThink()
         }
     }
 
-    DispatchAnimEvents(StudioFrameAdvance(0));
+    DispatchAnimEvents();
+    StudioFrameAdvance();
 
     pev->nextthink = gpGlobals->time + 0.1;
 
@@ -427,8 +428,8 @@ void COp4Mortar::MortarThink()
         {
             if(CMortarShell::CreateMortarShell(pev->origin, angle, this, floor(speed)))
             {
-                pev->sequence = LookupSequence("fire");
                 pev->frame = 0;
+                pev->sequence = LookupSequence("fire");
                 ResetSequenceInfo();
                 m_lastFire = gpGlobals->time;
             }
@@ -547,8 +548,8 @@ void COp4Mortar::Use(CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 
         if((CMortarShell::CreateMortarShell(pos, angle, this, 2000 - (m_vGunAngle.x * 12.25))) != NULL)
         {
+            pev->frame = 0;
             pev->sequence = LookupSequence("fire");
-            pev->framerate = 0;
             ResetSequenceInfo();
         }
       return;

@@ -277,7 +277,6 @@ void CGeneWormSpawn::Precache()
     PRECACHE_MODEL("sprites/tele1.spr");
     PRECACHE_MODEL("sprites/ignight.spr");
     PRECACHE_MODEL("sprites/boss_glow.spr");
-    PRECACHE_SOUND("debris/beamstart2.wav");
 }
 
 void CGeneWormSpawn::Spawn()
@@ -349,7 +348,7 @@ void CGeneWormSpawn::SpawnThink()
     if((player = UTIL_FindEntityByClassname(0, "player")))
     {
         if((player->pev->origin - pev->origin).Length() <= 96)
-            player->TakeDamage(VARS(player->pev), VARS(player->pev), 5, DMG_ENERGYBEAM);
+            player->TakeDamage(VARS(player->pev), VARS(player->pev), 5, DMG_SHOCK);
     }
 
     pev->nextthink = gpGlobals->time + 0.1;
@@ -397,6 +396,7 @@ public:
     }
 
     void HandleAnimEvent(MonsterEvent_t *pEvent);
+
     void EXPORT StartThink(void);
     void EXPORT HuntThink(void);
     void EXPORT CrashTouch(CBaseEntity *pOther);
@@ -445,6 +445,7 @@ public:
     float m_flNextRangeTime;
     float m_flDeathStart;
     float m_flNextActivityTime;
+    float m_flNextSequence;
 
     BOOL m_fActivated;
     BOOL m_fRightEyeHit;
@@ -455,7 +456,7 @@ public:
     BOOL m_fHasEntered;
     BOOL m_fSpawningTrooper;
 
-	int m_iLevel;
+    int m_iLevel;
     int m_iWasHit;
     int m_iMaxHitTimes;
 
@@ -497,7 +498,8 @@ TYPEDESCRIPTION CGeneWorm::m_SaveData[] =
     DEFINE_FIELD(CGeneWorm, m_flMadDelayTime, FIELD_FLOAT),
     DEFINE_FIELD(CGeneWorm, m_iLevel, FIELD_INTEGER),
     DEFINE_FIELD(CGeneWorm, m_fGetMad, FIELD_BOOLEAN),
-    DEFINE_FIELD(CGeneWorm, m_flSpitStartTime, FIELD_FLOAT)
+    DEFINE_FIELD(CGeneWorm, m_flSpitStartTime, FIELD_FLOAT),
+    DEFINE_FIELD(CGeneWorm, m_flNextSequence, FIELD_FLOAT)
 };
 IMPLEMENT_SAVERESTORE(CGeneWorm, CBaseMonster)
 
@@ -584,6 +586,7 @@ void CGeneWorm::Spawn()
     m_flNextActivityTime = gpGlobals->time + 6;
     m_flTakeHitTime = 0;
     m_flHitTime = 0;
+    m_flNextSequence = 99999999;
 
 
     m_fRightEyeHit = FALSE;
@@ -610,6 +613,7 @@ void CGeneWorm::Spawn()
 void CGeneWorm::Precache()
 {
     PRECACHE_MODEL("models/geneworm.mdl");
+
     PRECACHE_SOUND_ARRAY(pAttackSounds);
     PRECACHE_SOUND_ARRAY(pDeathSounds);
     PRECACHE_SOUND_ARRAY(pEntrySounds);
@@ -630,8 +634,10 @@ void CGeneWorm::StartThink(void)
     GetAttachment(0, vecEyePos, vecEyeAng);
 
     pev->view_ofs = vecEyePos - pev->origin;
-    pev->sequence = LookupSequence("entry");
+
     pev->frame = 0;
+    pev->sequence = LookupSequence("entry");
+    ResetSequenceInfo();
 
     m_flNextMeleeTime = gpGlobals->time;
     m_flNextRangeTime = gpGlobals->time;
@@ -667,7 +673,7 @@ void CGeneWorm::HitTouch( CBaseEntity *pOther )
 
 void CGeneWorm::Killed(entvars_t *pevAttacker, int iGib)
 {
-	CBaseMonster::Killed(pevAttacker, iGib);
+    CBaseMonster::Killed(pevAttacker, iGib);
 }
 
 void CGeneWorm::DyingThink(void)
@@ -744,7 +750,6 @@ void CGeneWorm::DyingThink(void)
             entity->SUB_StartFadeOut();
     }
 }
-
 //=========================================================
 //=========================================================
 void CGeneWorm::FloatSequence(void)
@@ -825,8 +830,6 @@ void CGeneWorm::NextActivity(void)
 
     if(m_fSpawningTrooper || m_OrificeHit)
     {
-        m_fSpawningTrooper = FALSE;
-        m_OrificeHit = FALSE;
         pev->sequence = LookupSequence("bigpain4");
         EMIT_SOUND_DYN(ENT(pev), 2, "geneworm/geneworm_final_pain4.wav", 1, 0.1, 0, 100);
         return;
@@ -838,9 +841,6 @@ void CGeneWorm::NextActivity(void)
         m_fRightEyeHit = FALSE;
         pev->skin = 0;
     }
-
-    m_orificeGlow = NULL;
-    m_flNextActivityTime = gpGlobals->time;
 
     if(ClawAttack())
         return;
@@ -912,6 +912,7 @@ BOOL CGeneWorm::ClawAttack()
 
 void CGeneWorm::TraceAttack(entvars_t *pevAttacker, float flDamage, Vector vecDir, TraceResult *ptr, int bitsDamageType)
 {
+    int sequence = -1;
 
     if(FClassnameIs(pevAttacker, "monster_penguin"))
     {
@@ -962,7 +963,10 @@ void CGeneWorm::TraceAttack(entvars_t *pevAttacker, float flDamage, Vector vecDi
                m_flOrificeOpenTime = gpGlobals->time + 20;
                m_fGetMad = FALSE;
            }
-            pev->sequence = LookupSequence("eyepain1");
+           sequence = LookupSequence("eyepain1");
+           EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "geneworm/geneworm_shot_in_eye.wav", 1, 0.2, 0, 100);
+           m_fSpiting = FALSE;
+           UTIL_BloodDrips(ptr->vecEndPos, ptr->vecEndPos, m_bloodColor, 256);
        }
 
        if(ptr->iHitgroup == 5 && !m_fRightEyeHit && FStrEq("right_eye_laser", STRING(pevAttacker->targetname)))
@@ -983,16 +987,25 @@ void CGeneWorm::TraceAttack(entvars_t *pevAttacker, float flDamage, Vector vecDi
                m_fGetMad = FALSE;
            }
 
-            pev->sequence = LookupSequence("eyepain2");
+            sequence = LookupSequence("eyepain2");
+            EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "geneworm/geneworm_shot_in_eye.wav", 1, 0.2, 0, 100);
+            m_fSpiting = FALSE;
+            UTIL_BloodDrips(ptr->vecEndPos, ptr->vecEndPos, m_bloodColor, 256);
        }
 
-       EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "geneworm/geneworm_shot_in_eye.wav", 1, 0.2, 0, 100);
-       m_fSpiting = FALSE;
-       UTIL_BloodDrips(ptr->vecEndPos, ptr->vecEndPos, m_bloodColor, 256);
+       if(sequence > -1)
+       {
+           pev->frame = 0;
+           pev->sequence = sequence;
+           ResetSequenceInfo();
+       }
    }
 
-   if(m_flOrificeOpenTime > gpGlobals->time && m_pBall && ptr->iHitgroup == 6)
+   if(m_flOrificeOpenTime >= gpGlobals->time && m_pBall && ptr->iHitgroup == 6)
    {
+       if(m_OrificeHit)
+           return;
+
        pev->health -= flDamage;
 
        if(pev->health <= 0)
@@ -1006,6 +1019,7 @@ void CGeneWorm::TraceAttack(entvars_t *pevAttacker, float flDamage, Vector vecDi
                pev->sequence = LookupSequence("bigpain3");
                m_iWasHit++;
                m_OrificeHit = TRUE;
+               m_flOrificeOpenTime = gpGlobals->time;
            }
            else
            {
@@ -1036,6 +1050,15 @@ void CGeneWorm::HuntThink(void)
             pev->renderfx = 0;
             pev->rendermode = kRenderNormal;
         }
+    }
+
+    // Fix sequence loops
+    if(gpGlobals->time - m_flNextSequence >= 2)
+    {
+        pev->frame = 0;
+        pev->sequence = LookupSequence("idle");
+        ResetSequenceInfo();
+        m_flNextSequence = 99999999;
     }
 
    if(m_fSequenceFinished)
@@ -1100,8 +1123,8 @@ void CGeneWorm::HuntThink(void)
 
 void CGeneWorm::HandleAnimEvent(MonsterEvent_t *pEvent)
 {
-	switch (pEvent->event)
-	{
+    switch (pEvent->event)
+    {
     case GENEWORM_AE_BEAM:
         m_fSpiting = TRUE;
         m_flSpitStartTime = gpGlobals->time;
@@ -1119,11 +1142,16 @@ void CGeneWorm::HandleAnimEvent(MonsterEvent_t *pEvent)
             vecAng = pev->angles;
 
             m_orificeGlow = CGeneWormSpawn::LaunchSpawn(vecPos, -vecAng, 1.25, ENT(pev));
+            pev->health = gSkillData.gwormHealth;
+
+            m_fSpawningTrooper = FALSE;
+            m_OrificeHit = FALSE;
+            m_orificeGlow = NULL;
+            m_flNextSequence = gpGlobals->time;
 
             EMIT_SOUND_DYN(ENT(pev), 1, "debris/beamstart7.wav", 1, 0.1, 0, RANDOM_LONG(-5, 5)+100);
-
-            break;
         }
+        break;
     }
     case GENEWORM_AE_MELEE_LEFT1:
         FireHurtTargets("GeneWormLeftSlash", this, this, USE_TOGGLE, 1);
@@ -1147,8 +1175,8 @@ void CGeneWorm::HandleAnimEvent(MonsterEvent_t *pEvent)
         FireHurtTargets("GeneWormWallHit", this, this, USE_TOGGLE, 0);
         UTIL_ScreenShake(pev->origin, 24, 3, 5, 2048);
         break;
-	default:
-		break;
+    default:
+        break;
 	}
 }
 
@@ -1174,16 +1202,7 @@ void CGeneWorm::CommandUse(CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TY
 
 int CGeneWorm::TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType)
 {
-    if(pev->health <= 0)
-    {
-        pev->health = 1;
-    }
-    else if(pev->health > flDamage)
-    {
-        pev->health -= flDamage;
-    }
-
-    return 1;
+    return 0;
 }
 
 void CGeneWorm::PainSound(void)
@@ -1193,38 +1212,38 @@ void CGeneWorm::PainSound(void)
 
 void CGeneWorm::DeathSound(void)
 {
-	EMIT_SOUND(ENT(pev), CHAN_VOICE, RANDOM_SOUND_ARRAY(pDeathSounds), 2, ATTN_NORM);
+    EMIT_SOUND(ENT(pev), CHAN_VOICE, RANDOM_SOUND_ARRAY(pDeathSounds), 2, ATTN_NORM);
 }
 
 void CGeneWorm::IdleSound(void)
 {
-	EMIT_SOUND(ENT(pev), CHAN_VOICE, RANDOM_SOUND_ARRAY(pIdleSounds), VOL_NORM, ATTN_NORM);
+    EMIT_SOUND(ENT(pev), CHAN_VOICE, RANDOM_SOUND_ARRAY(pIdleSounds), VOL_NORM, ATTN_NORM);
 }
 
 int CGeneWorm::Level(float dz)
 {
-	if (dz < GENEWORM_LEVEL1_HEIGHT)
-		return GENEWORM_LEVEL0;
+    if (dz < GENEWORM_LEVEL1_HEIGHT)
+        return GENEWORM_LEVEL0;
 
-	return GENEWORM_LEVEL1;
+    return GENEWORM_LEVEL1;
 }
 int CGeneWorm::MyEnemyLevel(void)
 {
-	if (!m_hEnemy)
-		return -1;
+    if (!m_hEnemy)
+        return -1;
 
-	return Level(m_hEnemy->pev->origin.z);
+    return Level(m_hEnemy->pev->origin.z);
 }
 
 float CGeneWorm::MyEnemyHeight(void)
 {
-	switch (m_iLevel)
-	{
-	case GENEWORM_LEVEL0:
-		return GENEWORM_LEVEL0_HEIGHT;
-	case GENEWORM_LEVEL1:
-		return GENEWORM_LEVEL1_HEIGHT;
-	}
+    switch (m_iLevel)
+    {
+    case GENEWORM_LEVEL0:
+        return GENEWORM_LEVEL0_HEIGHT;
+    case GENEWORM_LEVEL1:
+        return GENEWORM_LEVEL1_HEIGHT;
+    }
 
-	return GENEWORM_LEVEL1_HEIGHT;
+    return GENEWORM_LEVEL1_HEIGHT;
 }

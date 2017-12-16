@@ -268,30 +268,30 @@ IMPLEMENT_SAVERESTORE(CPitWorm, CBaseMonster)
 
 const char *CPitWorm::pHitSilo[] =
 {
-        "tentacle/te_strike1.wav",
-        "tentacle/te_strike2.wav",
+    "tentacle/te_strike1.wav",
+    "tentacle/te_strike2.wav",
 };
 
 const char* CPitWorm::pClangSounds[] =
 {
-        "pitworm/clang1.wav",
-        "pitworm/clang2.wav",
-        "pitworm/clang3.wav",
+    "pitworm/clang1.wav",
+    "pitworm/clang2.wav",
+    "pitworm/clang3.wav",
 };
 
 const char* CPitWorm::pAngrySounds[] =
 {
-        "pitworm/pit_worm_angry1.wav",
-        "pitworm/pit_worm_angry2.wav",
-        "pitworm/pit_worm_angry3.wav",
+    "pitworm/pit_worm_angry1.wav",
+    "pitworm/pit_worm_angry2.wav",
+    "pitworm/pit_worm_angry3.wav",
 };
 
 
 const char* CPitWorm::pSwipeSounds[] =
 {
-        "pitworm/pit_worm_attack_swipe1.wav",
-        "pitworm/pit_worm_attack_swipe2.wav",
-        "pitworm/pit_worm_attack_swipe3.wav",
+    "pitworm/pit_worm_attack_swipe1.wav",
+    "pitworm/pit_worm_attack_swipe2.wav",
+    "pitworm/pit_worm_attack_swipe3.wav",
 };
 
 const char* CPitWorm::pPainSounds[] =
@@ -303,61 +303,61 @@ const char* CPitWorm::pPainSounds[] =
 
 const char* CPitWorm::pFlinchSounds[] =
 {
-        "pitworm/pit_worm_flinch1.wav",
-        "pitworm/pit_worm_flinch2.wav",
+    "pitworm/pit_worm_flinch1.wav",
+    "pitworm/pit_worm_flinch2.wav",
 };
 
 const char* CPitWorm::pAlertSounds[] =
 {
-        "pitworm/pit_worm_alert.wav",
+    "pitworm/pit_worm_alert.wav",
 };
 
 const char* CPitWorm::pIdleSounds[] =
 {
-        "pitworm/pit_worm_idle1.wav",
-        "pitworm/pit_worm_idle2.wav",
-        "pitworm/pit_worm_idle3.wav",
+    "pitworm/pit_worm_idle1.wav",
+    "pitworm/pit_worm_idle2.wav",
+    "pitworm/pit_worm_idle3.wav",
 };
 
 const char* CPitWorm::pDeathSounds[] =
 {
-        "pitworm/pit_worm_death.wav",
+    "pitworm/pit_worm_death.wav",
 };
 
 static const char* g_pszPitwormAnims[] =
 {
-        "idle",
-        "idle2",
-        "attack",
-        "scream",
-        "attacklow",
-        "doorclaw1",
-        "doorclaw2",
-        "doorclaw3",
-        "eyeblast",
-        "platclaw1",
-        "platclaw2",
-        "flinch1",
-        "flinch2",
-        "death",
+    "idle",
+    "idle2",
+    "attack",
+    "scream",
+    "attacklow",
+    "doorclaw1",
+    "doorclaw2",
+    "doorclaw3",
+    "eyeblast",
+    "platclaw1",
+    "platclaw2",
+    "flinch1",
+    "flinch2",
+    "death",
 };
 
 typedef enum
 {
-        PITWORM_ANIM_IDLE,
-        PITWORM_ANIM_IDLE2,
-        PITWORM_ANIM_ATTACK,
-        PITWORM_ANIM_SCREAM,
-        PITWORM_ANIM_ATTACKLOW,
-        PITWORM_ANIM_DOORCLAW1,
-        PITWORM_ANIM_DOORCLAR2,
-        PITWORM_ANIM_DOORCLAR3,
-        PITWORM_ANIM_EYEBLAST,
-        PITWORM_ANIM_PLATCLAW1,
-        PITWORM_ANIM_PLATCLAW2,
-        PITWORM_ANIM_FLINCH1,
-        PITWORM_ANIM_FLINCH2,
-        PITWORM_ANIM_DEATH,
+    PITWORM_ANIM_IDLE,
+    PITWORM_ANIM_IDLE2,
+    PITWORM_ANIM_ATTACK,
+    PITWORM_ANIM_SCREAM,
+    PITWORM_ANIM_ATTACKLOW,
+    PITWORM_ANIM_DOORCLAW1,
+    PITWORM_ANIM_DOORCLAR2,
+    PITWORM_ANIM_DOORCLAR3,
+    PITWORM_ANIM_EYEBLAST,
+    PITWORM_ANIM_PLATCLAW1,
+    PITWORM_ANIM_PLATCLAW2,
+    PITWORM_ANIM_FLINCH1,
+    PITWORM_ANIM_FLINCH2,
+    PITWORM_ANIM_DEATH,
 
 } PITWORM_ANIM;
 
@@ -366,71 +366,71 @@ typedef enum
 //=========================================================
 void CPitWorm::Spawn()
 {
-        Precache();
+    Precache();
 
     pev->movetype = MOVETYPE_STEP;
     pev->solid = SOLID_SLIDEBOX;
 
     if (pev->model)
-                SET_MODEL(ENT(pev), STRING(pev->model)); //LRC
-        else
+        SET_MODEL(ENT(pev), STRING(pev->model)); //LRC
+    else
         SET_MODEL(ENT(pev), "models/pit_worm_up.mdl");
-        UTIL_SetSize(pev, Vector(-64, -128, 0), Vector(64, 128, 64));
-        UTIL_SetOrigin(pev, pev->origin);
+    UTIL_SetSize(pev, Vector(-64, -128, 0), Vector(64, 128, 64));
+    UTIL_SetOrigin(pev, pev->origin);
 
         // Set fields common to all monsters
-        //pev->flags |= FL_MONSTER;
-        pev->health = 150 * gSkillData.pwormHealth;
-        pev->view_ofs = PITWORM_EYE_OFFSET;
+        //pev->flags |= FL_MONSTER
+    pev->health = 150 * gSkillData.pwormHealth;
+    pev->view_ofs = PITWORM_EYE_OFFSET;
 
-        m_flFieldOfView = -1;
+    m_flFieldOfView = -1;
 
-        pev->sequence = 0;
-        ResetSequenceInfo();
+    pev->sequence = 0;
+    ResetSequenceInfo();
 
-        InitBoneControllers();
+    InitBoneControllers();
 
-        SetThink(&CPitWorm::StartupThink);
-        pev->nextthink = gpGlobals->time + 0.1;
+    SetThink(&CPitWorm::StartupThink);
+    pev->nextthink = gpGlobals->time + 0.1;
 
-        m_spawnAngles = pev->angles;
-        m_flInitialYaw = m_spawnAngles.y;
-        pev->ideal_yaw = m_flInitialYaw;
+    m_spawnAngles = pev->angles;
+    m_flInitialYaw = m_spawnAngles.y;
+    pev->ideal_yaw = m_flInitialYaw;
 
-        m_IdealMonsterState = MONSTERSTATE_IDLE;// Assume monster will be idle, until proven otherwise
+    m_IdealMonsterState = MONSTERSTATE_IDLE;// Assume monster will be idle, until proven otherwise
 
-        m_IdealActivity = ACT_IDLE;
+    m_IdealActivity = ACT_IDLE;
 
-        m_flDistTooFar = 1024.0;
-        m_flDistLook = 2048.0;
+    m_flDistTooFar = 1024.0;
+    m_flDistLook = 2048.0;
 
         // set eye position
-        SetEyePosition();
+    SetEyePosition();
 
-        m_flLastSeen = 0.0f;
-        m_flPrevSeen = 0.0f;
-        m_iLevel = PITWORM_LEVEL1;
+    m_flLastSeen = 0.0f;
+    m_flPrevSeen = 0.0f;
+    m_iLevel = PITWORM_LEVEL1;
 
-        m_pBeam = NULL;
-        m_flBeamYaw = 0.0f;
-        m_fBeamOn = FALSE;
-        m_eyeBrightness = 0;
-        m_slowMode = 4;
-        m_afCapability = bits_CAP_MELEE_ATTACK1;
-        m_slowTime = gpGlobals->time;
-        m_vecCurAngles = Vector(0, pev->angles.y, 0);
-        m_vecGoalAngles = Vector(0, pev->angles.y, 0);
-        m_flNextAttackTime = gpGlobals->time;
-        m_flNextIdleSoundTime = gpGlobals->time;
-        m_bloodColor = BLOOD_COLOR_GREEN;
-        m_fActivated = FALSE;
-        m_vecEmemyPos = g_vecZero;
-        m_flNextBlink = gpGlobals->time;
-        m_fBlink = FALSE;
-        m_iLaserHitTimes = 0;
+    m_pBeam = NULL;
+    m_flBeamYaw = 0.0f;
+    m_fBeamOn = FALSE;
+    m_eyeBrightness = 0;
+    m_slowMode = 4;
+    m_afCapability = bits_CAP_MELEE_ATTACK1;
+    m_slowTime = gpGlobals->time;
+    m_vecCurAngles = Vector(0, pev->angles.y, 0);
+    m_vecGoalAngles = Vector(0, pev->angles.y, 0);
+    m_flNextAttackTime = gpGlobals->time;
+    m_flNextIdleSoundTime = gpGlobals->time;
+    m_bloodColor = BLOOD_COLOR_GREEN;
+    m_fActivated = FALSE;
+    m_vecEmemyPos = g_vecZero;
+    m_flNextBlink = gpGlobals->time;
+    m_fBlink = FALSE;
+    m_iLaserHitTimes = 0;
 
         // Create the eye glow.
-        CreateGlow();
+    CreateGlow();
 }
 
 //=========================================================
@@ -439,9 +439,9 @@ void CPitWorm::Spawn()
 void CPitWorm::Precache()
 {
         if (pev->model)
-                PRECACHE_MODEL((char*)STRING(pev->model)); //LRC
+            PRECACHE_MODEL((char*)STRING(pev->model)); //LRC
         else
-                PRECACHE_MODEL("models/pit_worm_up.mdl");
+            PRECACHE_MODEL("models/pit_worm_up.mdl");
 
         PRECACHE_SOUND_ARRAY(pHitSilo);
 
@@ -872,28 +872,30 @@ void CPitWorm::HuntThink(void)
 
         // Update the eye glow.
         EyeUpdate();
-        
+
         if(!m_fActivated)
         {
-        	if(!m_hEnemy)
-        	{
-        		Look(4096);
-        		m_hEnemy = BestVisibleEnemy();
-        	}
-        	else
-        	{
-        		if((pev->origin - m_hEnemy->pev->origin).Length() <= 936)
-        		{
-        			EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "pitworm/pit_worm_alert(scream).wav", 1, 0.8, 0, 100);
-        			pev->sequence = LookupSequence("scream");
-        			m_fActivated = TRUE;
-        		}
-        		else
-        		{
-        			pev->nextthink = gpGlobals->time + 0.01f;
-        			return;
-        		}
-        	}
+            if(!m_hEnemy)
+            {
+                Look(4096);
+                m_hEnemy = BestVisibleEnemy();
+            }
+            else
+            {
+                if((pev->origin - m_hEnemy->pev->origin).Length() <= 936)
+                {
+                    EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "pitworm/pit_worm_alert(scream).wav", 1, 0.8, 0, 100);
+                    pev->frame = 0;
+                    pev->sequence = LookupSequence("scream");
+                    ResetSequenceInfo();
+                    m_fActivated = TRUE;
+                }
+                else
+                {
+                    pev->nextthink = gpGlobals->time + 0.01f;
+                    return;
+                }
+            }
         }
 
         if (m_hEnemy)
@@ -1090,9 +1092,9 @@ int CPitWorm::CanPlaySequence(BOOL fDisregardState)
 //=========================================================
 void CPitWorm::NextActivity()
 {
-    	if(!m_fActivated)
-	     	return;
-		
+        if(!m_fActivated)
+            return;
+
         UTIL_MakeAimVectors(pev->angles);
 
         Vector forward = gpGlobals->v_forward;
@@ -1341,8 +1343,8 @@ void CPitWorm::UpdateBodyControllers(void)
 //=========================================================
 void CPitWorm::CreateBeam(const Vector& src, const Vector& target, int width)
 {
-    	pev->skin = 0;
-    	
+        pev->skin = 0;
+
         m_pBeam = CBeam::BeamCreate("sprites/gworm_beam_02.spr", width);
         if (m_pBeam)
         {
