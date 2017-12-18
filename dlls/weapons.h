@@ -1380,6 +1380,7 @@ public:
 	int AddToPlayer(CBasePlayer *pPlayer);
 
 	void PrimaryAttack(void);
+	void SecondaryAttack() { return; }
 	BOOL Deploy(void);
 	void Holster(int skiplocal = 0);
 	void Reload(void);
