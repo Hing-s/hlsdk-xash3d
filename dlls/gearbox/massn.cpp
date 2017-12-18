@@ -167,6 +167,8 @@ void CMassn::HandleAnimEvent(MonsterEvent_t *pEvent)
             ClearConditions( bits_COND_NO_AMMO_LOADED );
         }
     }
+    break;
+
     case MASSN_AE_DROP_GUN:
     {
             Vector	vecGunPos;
