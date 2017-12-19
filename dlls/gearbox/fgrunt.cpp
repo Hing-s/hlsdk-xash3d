@@ -1204,7 +1204,7 @@ void CHFGrunt :: GibMonster ( void )
 		}
 		else if (FBitSet( pev->weapons, FGRUNT_M4A1 ))
 		{
-			pGun = DropItem( "weapon_sniperrifle", vecGunPos, vecGunAngles );
+			pGun = DropItem( "weapon_9mmAR", vecGunPos, vecGunAngles );
 		}
 		else
 		{
