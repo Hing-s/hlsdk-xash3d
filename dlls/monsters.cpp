@@ -2199,7 +2199,7 @@ int CBaseMonster::IRelationship( CBaseEntity *pTarget )
 	/*PLAYERALLY*/	{ R_NO	,R_DL	,R_AL	,R_AL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO,	R_NO,	R_NO	},
 	/*PBIOWEAPON*/	{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_DL,	R_NO,	R_DL	},
 	/*ABIOWEAPON*/	{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_AL	,R_NO	,R_DL	,R_DL	,R_NO	,R_NO	,R_DL,	R_DL,	R_NO	},
-	/*XPREDATOR*/	{ R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO	,R_NO	,R_DL	,R_DL	,R_NO	,R_NO,	R_NO,	R_AL,	R_AL}
+	/*XPREDATOR*/	{ R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO	,R_NO	,R_DL	,R_DL	,R_NO	,R_DL,	R_NO,	R_AL,	R_AL}
 	};
 
 	return iEnemy[Classify()][pTarget->Classify()];
