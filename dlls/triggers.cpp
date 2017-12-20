@@ -1856,7 +1856,13 @@ void CBaseTrigger::TeleportTouch( CBaseEntity *pOther )
 
 void CBaseTrigger::TeleportUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
-    entvars_t *pevToucher = pActivator->pev;
+	CBaseEntity *teleport;
+
+	// it used on of6a5 map only
+    	if((teleport = UTIL_FindEntityByTargetname(0, "GeneWormTeleport")) == NULL)
+       	    return;
+
+    	entvars_t *pevToucher = pActivator->pev;
 	edict_t	*pentTarget = NULL;
 
 	// Only teleport monsters or clients
