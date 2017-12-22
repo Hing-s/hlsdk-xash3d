@@ -407,13 +407,13 @@ int CBarnacleGrapple::AddToPlayer( CBasePlayer* pPlayer )
 
 BOOL CBarnacleGrapple::Deploy()
 {
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.9;
+	m_flTimeWeaponIdle = gpGlobals->time + 0.9;
 	return DefaultDeploy("models/v_bgrap.mdl", "models/p_bgrap.mdl", BGRAPPLE_UP, "gauss" );
 }
 
 void CBarnacleGrapple::Holster( int skiplocal /* = 0 */ )
 {
-	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 0.5;
+	m_pPlayer->m_flNextAttack = gpGlobals->time + 0.5;
 
 	if( m_FireState != OFF )
 		EndAttack();
@@ -425,17 +425,14 @@ void CBarnacleGrapple::WeaponIdle( void )
 {
 	ResetEmptySound();
 
-	if( m_flTimeWeaponIdle > UTIL_WeaponTimeBase() )
+	if( m_flTimeWeaponIdle > gpGlobals->time )
 		return;
 
 	if( m_FireState != OFF )
 	{
 		EndAttack();
-	}
-
-	if( m_flTimeWeaponIdle > UTIL_WeaponTimeBase() )
 		return;
-
+	}
 
 	m_bMissed = FALSE;
 
@@ -446,19 +443,19 @@ void CBarnacleGrapple::WeaponIdle( void )
 	if( flNextIdle <= 0.5 )
 	{
 		iAnim = BGRAPPLE_LONGIDLE;
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 10.0;
+		m_flTimeWeaponIdle = gpGlobals->time + 10.0;
 	}
 	else if( flNextIdle > 0.95 )
 	{
 		EMIT_SOUND_DYN( ENT(m_pPlayer->pev), CHAN_STATIC, "weapons/bgrapple_cough.wav", VOL_NORM, ATTN_NORM, 0, PITCH_NORM );
 
 		iAnim = BGRAPPLE_COUGH;
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 4.6;
+		m_flTimeWeaponIdle = gpGlobals->time + 4.6;
 	}
 	else
 	{
 		iAnim = BGRAPPLE_BREATHE;
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 2.566;
+		m_flTimeWeaponIdle = gpGlobals->time + 2.566;
 	}
 
 	SendWeaponAnim( iAnim );
@@ -468,12 +465,12 @@ void CBarnacleGrapple::PrimaryAttack( void )
 {
 	if( m_bMissed )
 	{
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.1;
+		m_flTimeWeaponIdle = gpGlobals->time + 0.1;
 		return;
 	}
 
 	UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
-
+#ifndef CLIENT_DLL
 	if( m_pTip )
 	{
 		if( m_pTip->IsStuck() )
@@ -570,7 +567,7 @@ void CBarnacleGrapple::PrimaryAttack( void )
 			return;
 		}
 	}
-
+#endif
 	if( m_FireState != OFF )
 	{
 		m_pPlayer->m_iWeaponVolume = 450;
@@ -598,8 +595,8 @@ void CBarnacleGrapple::PrimaryAttack( void )
 
 		m_pPlayer->m_iWeaponVolume = 450;
 
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.1;
-
+		m_flTimeWeaponIdle = gpGlobals->time + 0.1;
+#ifndef CLIENT_DLL
 		if( g_pGameRules->IsMultiplayer() )
 		{
 			m_flShootTime = gpGlobals->time;
@@ -608,14 +605,14 @@ void CBarnacleGrapple::PrimaryAttack( void )
 		{
 			m_flShootTime = gpGlobals->time + 0.35;
 		}
-
+#endif
 		EMIT_SOUND_DYN( ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/bgrapple_fire.wav", 0.98, ATTN_NORM, 0, 125 );
 		m_FireState = CHARGE;
 	}
 
 	if( !m_pTip )
 	{
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.01;
+		m_flNextPrimaryAttack = gpGlobals->time + 0.01;
 		return;
 	}
 
@@ -665,17 +662,17 @@ void CBarnacleGrapple::PrimaryAttack( void )
 				if( m_pTip )
 				{
 					bool bValidTarget = FALSE;
+#ifndef CLIENT_DLL
 					if( pHit->IsPlayer() )
 					{
 						m_pTip->SetGrappleTarget( pHit );
-
 						bValidTarget = TRUE;
 					}
 					else if( m_pTip->CheckTarget( pHit ) != NOT_A_TARGET )
 					{
 						bValidTarget = TRUE;
 					}
-
+#endif
 					if( bValidTarget )
 					{
 						if( m_flDamageTime + 0.5 < gpGlobals->time )
@@ -718,12 +715,12 @@ void CBarnacleGrapple::PrimaryAttack( void )
 	/*
 	if( g_pGameRules->IsMultiplayer() && g_pGameRules->IsCTF() )
 	{
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase();
+		m_flNextPrimaryAttack = gpGlobals->time;
 	}
 	else
 	*/
 	{
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.01;
+		m_flNextPrimaryAttack = gpGlobals->time + 0.01;
 	}
 }
 
@@ -764,18 +761,18 @@ void CBarnacleGrapple::EndAttack( void )
 
 	EMIT_SOUND_DYN( ENT( m_pPlayer->pev ), CHAN_WEAPON, "weapons/bgrapple_pull.wav", 0.0, ATTN_NONE, SND_STOP, 100 );
 
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.9;
+	m_flTimeWeaponIdle = gpGlobals->time + 0.9;
 
 	//TODO: CTF support - Solokiller
 	/*
 	if( g_pGameRules->IsMultiplayer() && g_pGameRules->IsCTF() )
 	{
-	m_flNextPrimaryAttack = UTIL_WeaponTimeBase();
+	m_flNextPrimaryAttack = gpGlobals->time;
 	}
 	else
 	*/
 	{
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.01;
+		m_flNextPrimaryAttack = gpGlobals->time + 0.01;
 	}
 
 	DestroyEffect();

@@ -49,13 +49,13 @@ public:
 	bool IsStuck() const { return m_bIsStuck; }
 
 	bool HasMissed() const { return m_bMissed; }
-
+#ifndef CLIENT_DLL
 	EHANDLE& GetGrappleTarget() { return m_hGrappleTarget; }
-
 	void SetGrappleTarget( CBaseEntity* pTarget )
 	{
 		m_hGrappleTarget = pTarget;
 	}
+#endif
 private:
 	int m_GrappleType;
 	bool m_bIsStuck;

@@ -20,8 +20,11 @@
 #include "monsters.h"
 #include "player.h"
 #include "gamerules.h"
+#include "shake.h"
 
 #ifndef CLIENT_DLL
+
+extern edict_t *EntSelectSpawnPoint( CBaseEntity *pPlayer );
 
 LINK_ENTITY_TO_CLASS(info_displacer_xen_target, CPointEntity);
 LINK_ENTITY_TO_CLASS(info_displacer_earth_target, CPointEntity);
@@ -29,11 +32,7 @@ LINK_ENTITY_TO_CLASS(info_displacer_earth_target, CPointEntity);
 int iPortalSprite = 0;
 int iRingSprite = 0;
 
-//=========================================================
-// Displacement field
-//=========================================================
-
-LINK_ENTITY_TO_CLASS(displacer_ball, CDisplacerBall);
+LINK_ENTITY_TO_CLASS(displacer_ball, CDisplacerBall)
 
 TYPEDESCRIPTION	CDisplacerBall::m_SaveData[] =
 {
@@ -46,7 +45,6 @@ IMPLEMENT_SAVERESTORE(CDisplacerBall, CBaseEntity);
 void CDisplacerBall::Spawn(void)
 {
 	pev->movetype = MOVETYPE_FLY;
-	pev->classname = MAKE_STRING("portal");
 
 	pev->solid = SOLID_BBOX;
 	pev->rendermode = kRenderTransAdd;
@@ -56,6 +54,7 @@ void CDisplacerBall::Spawn(void)
 	pev->frame = 0;
 	pev->scale = 0.75;
 
+	SetTouch( &CDisplacerBall::Touch );
 	SetThink( &CDisplacerBall::FlyThink );
 	pev->nextthink = gpGlobals->time + 0.2;
 	UTIL_SetSize(pev, Vector(0, 0, 0), Vector(0, 0, 0));
@@ -92,7 +91,7 @@ void CDisplacerBall::ArmBeam( int iSide )
 	if( flDist == 1.0 )
 		return;
 
-	//The beam might already exist if we've created all beams before.
+	// The beam might already exist if we've created all beams before.
 	if( !m_pBeam[ m_iBeams ] )
 		m_pBeam[ m_iBeams ] = CBeam::BeamCreate( "sprites/lgtning.spr", 30 );
 
@@ -113,6 +112,7 @@ void CDisplacerBall::ArmBeam( int iSide )
 		m_pBeam[ m_iBeams ]->EntsInit( pHit->entindex(), entindex() );
 		m_pBeam[ m_iBeams ]->SetColor( 255, 255, 255 );
 		m_pBeam[ m_iBeams ]->SetBrightness( 255 );
+		m_pBeam[ m_iBeams ]->SetNoise( 10 );
 
 		RadiusDamage( tr.vecEndPos, pev, pevOwner, 25, 15, CLASS_NONE, DMG_ENERGYBEAM );
 	}
@@ -146,10 +146,9 @@ void CDisplacerBall::SelfCreate(entvars_t *pevOwner,Vector vecStart)
 	pSelf->pev->owner = ENT(pevOwner);
 	pSelf->Circle();
 	pSelf->SetTouch( NULL );
-	pSelf->SetThink(&CDisplacerBall::ExplodeThink);
-	pSelf->pev->nextthink = gpGlobals->time + 0.3;
+	pSelf->SetThink(&CDisplacerBall::KillThink);
+	pSelf->pev->nextthink = gpGlobals->time + ( g_pGameRules->IsMultiplayer() ? 0.2f : 0.5f );
 }
-
 
 void CDisplacerBall::Touch(CBaseEntity *pOther)
 {
@@ -160,58 +159,58 @@ void CDisplacerBall::Touch(CBaseEntity *pOther)
 	TraceResult tr;
 	Vector vecSpot;
 	Vector vecSrc;
-	edict_t *pEnt = NULL;
 	pev->enemy = pOther->edict();
 	CBaseEntity *pTarget = NULL;
 
 	if (!pOther->pev->takedamage)
-		EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "weapons/displacer_impact.wav", 1, ATTN_NORM, 0, 100);
-	
-	if( g_pGameRules->IsMultiplayer() && !g_pGameRules->IsCoOp() )
 	{
-		// Randomize the destination in multiplayer
-		
-		for( int i = RANDOM_LONG( 1, 5 ); i > 0; i-- )
-			pEnt = FIND_ENTITY_BY_CLASSNAME(pEnt, "info_player_deathmatch");
-		if( pEnt )
-			pTarget = GetClassPtr((CBaseEntity *)VARS(pEnt));
+		EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "weapons/displacer_impact.wav", 1, ATTN_NORM, 0, 100);
+		UTIL_MuzzleLight( pOther->pev->origin, 160.0f, 255, 180, 96, 1.0f, 100.0f );
 	}
 
-	if(pTarget && pOther->IsPlayer())
-   	{
-		Vector tmp = pTarget->pev->origin;
-		UTIL_CleanSpawnPoint( tmp, 100 );
+	if( ( g_pGameRules->IsMultiplayer() && !g_pGameRules->IsCoOp() ) && pOther->IsPlayer() )
+	{
+		CBasePlayer *pPlayer = (CBasePlayer *)pOther;
+		pTarget = GetClassPtr( (CBaseEntity *)VARS( EntSelectSpawnPoint( pPlayer ) ) );
 
-		EMIT_SOUND( pOther->edict(), CHAN_BODY, "weapons/displacer_self.wav", 1, ATTN_NORM );
+		if( pTarget )
+		{
+			// UTIL_ScreenFade( pPlayer, Vector( 0, 200, 0 ), 0.5, 0.5, 255, FFADE_IN );
+			Vector tmp = pTarget->pev->origin;
+			UTIL_CleanSpawnPoint( tmp, 100 );
 
-		// make origin adjustments (origin in center, not at feet)
-		tmp.z -= pOther->pev->mins.z +5;
-		tmp.z++;
+			EMIT_SOUND( pPlayer->edict(), CHAN_BODY, "weapons/displacer_self.wav", 1, ATTN_NORM );
 
-		pOther->pev->flags &= ~FL_ONGROUND;
+			// make origin adjustments (origin in center, not at feet)
+			tmp.z -= pPlayer->pev->mins.z + 36;
+			tmp.z++;
 
-		UTIL_SetOrigin(pOther->pev, tmp);
+			pPlayer->pev->flags &= ~FL_ONGROUND;
 
-		pOther->pev->angles = pTarget->pev->angles;
+			UTIL_SetOrigin( pPlayer->pev, tmp );
 
-		pOther->pev->v_angle = pTarget->pev->angles;
+			pPlayer->pev->angles = pTarget->pev->angles;
 
-		pOther->pev->fixangle = TRUE;
+			pPlayer->pev->v_angle = pTarget->pev->angles;
 
-		pOther->pev->velocity = pOther->pev->basevelocity = g_vecZero;
+			pPlayer->pev->fixangle = TRUE;
+
+			pPlayer->pev->velocity = pOther->pev->basevelocity = g_vecZero;
+		}
 	}
 
 	pev->movetype = MOVETYPE_NONE;
 
 	Circle();
 
-	SetThink(&CDisplacerBall::ExplodeThink);
-	pev->nextthink = gpGlobals->time + 0.3;
+	SetThink(&CDisplacerBall::KillThink);
+	pev->nextthink = gpGlobals->time + ( g_pGameRules->IsMultiplayer() ? 0.2f : 0.5f );
 }
+
 void CDisplacerBall::Circle( void )
 {
 	// portal circle
-	MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pev->origin);
+	MESSAGE_BEGIN(MSG_PAS, SVC_TEMPENTITY, pev->origin);
 		WRITE_BYTE(TE_BEAMCYLINDER);
 		WRITE_COORD(pev->origin.x);
 		WRITE_COORD(pev->origin.y);
@@ -231,7 +230,15 @@ void CDisplacerBall::Circle( void )
 		WRITE_BYTE(255); // brightness
 		WRITE_BYTE(0);		// speed
 	MESSAGE_END();
+	UTIL_MuzzleLight( pev->origin, 160.0f, 255, 180, 96, 1.0f, 100.0f );
+}
 
+void CDisplacerBall::KillThink( void )
+{
+	if( pRemoveEnt )
+		UTIL_Remove( pRemoveEnt );
+	SetThink( &CDisplacerBall::ExplodeThink );
+	pev->nextthink = gpGlobals->time + 0.2f;
 }
 
 void CDisplacerBall::ExplodeThink( void )
@@ -242,17 +249,12 @@ void CDisplacerBall::ExplodeThink( void )
 
 	EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/displacer_teleport.wav", VOL_NORM, ATTN_NORM);
 
-	if ( pRemoveEnt )
-	{
-		UTIL_Remove( pRemoveEnt );
-	}
-
 	entvars_t *pevOwner;
 	if ( pev->owner )
 		pevOwner = VARS( pev->owner );
 	else
 		pevOwner = NULL;
-		pev->owner = NULL;
+	pev->owner = NULL;
 
 	UTIL_Remove( this );
 
@@ -373,7 +375,6 @@ void CDisplacer::Precache(void)
 	PRECACHE_SOUND("weapons/displacer_teleport_player.wav");
 
 	PRECACHE_SOUND("buttons/button11.wav");
-	PRECACHE_SOUND("buttons/button10.wav");
 
 	PRECACHE_MODEL("sprites/lgtning.spr");
 
@@ -402,6 +403,7 @@ void CDisplacer::Holster(int skiplocal /* = 0 */)
 {
 	m_fInReload = FALSE;// cancel any reload in progress.
 
+	ClearBeams();
 	ClearSpin();
 
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 1.0f;
@@ -423,9 +425,9 @@ void CDisplacer::SecondaryAttack(void)
 
 	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
 
-    m_iFireMode = FIREMODE_BACKWARD;
+	m_iFireMode = FIREMODE_BACKWARD;
 
-    SetThink (&CDisplacer::SpinUp);
+	SetThink (&CDisplacer::SpinUp);
 
 	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 4.0;
 	pev->nextthink = gpGlobals->time;
@@ -499,32 +501,20 @@ void CDisplacer::ClearSpin( void )
 //=========================================================
 void CDisplacer::SpinUp( void )
 {
-	int flags;
-#if defined( CLIENT_WEAPONS )
-	flags = FEV_NOTHOST;
-#else
-	flags = 0;
-#endif
+	SendWeaponAnim( DISPLACER_SPINUP, UseDecrement());
 
-	PLAYBACK_EVENT_FULL(
-		flags,
-		m_pPlayer->edict(),
-		m_usDisplacer,
-		0.0,
-		(float *)&g_vecZero,
-		(float *)&g_vecZero,
-		0.0,
-		0.0,
-		DISPLACER_SPINUP,
-		m_iFireMode,
-		TRUE,
-		0);
+	LightningEffect();
 
-	if ( m_iFireMode == FIREMODE_FORWARD ) 
+	if( m_iFireMode == FIREMODE_FORWARD ) 
+	{
+		EMIT_SOUND( edict(), CHAN_WEAPON, "weapons/displacer_spin.wav", 1, ATTN_NORM );
 		SetThink (&CDisplacer::Displace);
-	else 
+	}
+	else
+	{
+		EMIT_SOUND( edict(), CHAN_WEAPON, "weapons/displacer_spin2.wav", 1, ATTN_NORM );
 		SetThink (&CDisplacer::Teleport);
-
+	}
 	pev->nextthink = gpGlobals->time + 0.9;
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.3;
 }
@@ -534,27 +524,16 @@ void CDisplacer::SpinUp( void )
 //=========================================================
 void CDisplacer::Displace( void )
 {
+	ClearBeams();
 	ClearSpin();
-	int flags;
-#if defined( CLIENT_WEAPONS )
-	flags = FEV_NOTHOST;
-#else
-	flags = 0;
-#endif
-	PLAYBACK_EVENT_FULL(
-		flags,
-		m_pPlayer->edict(),
-		m_usDisplacer,
-		0.0,
-		(float *)&g_vecZero,
-		(float *)&g_vecZero,
-		0.0,
-		0.0,
-		DISPLACER_FIRE,
-		FIREMODE_FORWARD,
-		0,//&&55&
-		0);
 
+	SendWeaponAnim( DISPLACER_FIRE, UseDecrement());
+	EMIT_SOUND( edict(), CHAN_WEAPON, "weapons/displacer_fire.wav", 1, ATTN_NORM );
+
+	// player "shoot" animation
+        m_pPlayer->SetAnimation( PLAYER_ATTACK1 );	
+
+	m_pPlayer->pev->punchangle.x -= 2;
 #ifndef CLIENT_DLL
 	Vector vecSrc;
 	UseAmmo(DISPLACER_PRIMARY_USAGE);
@@ -566,9 +545,10 @@ void CDisplacer::Displace( void )
 	vecSrc = vecSrc + gpGlobals->v_right	* 8;
 	vecSrc = vecSrc + gpGlobals->v_up		* -12;
 
-	CDisplacerBall::Shoot(m_pPlayer->pev, vecSrc, gpGlobals->v_forward * 500, m_pPlayer->pev->v_angle );
-#endif
+	CDisplacerBall::Shoot( m_pPlayer->pev, vecSrc, gpGlobals->v_forward * 500, m_pPlayer->pev->v_angle );
+
 	SetThink( NULL );
+#endif
 }
 
 //=========================================================
@@ -579,11 +559,9 @@ void CDisplacer::Teleport()
     CBaseEntity *pTarget;
     edict_t *pEnt;
     TraceResult tr;
-
+    ClearBeams();
     ClearSpin();
 #ifndef CLIENT_DLL
-    EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "weapons/displacer_spin.wav", 0, 0, 32, 100 );
-
     if(!g_pGameRules->IsMultiplayer() || g_pGameRules->IsCoOp())
     {
         pTarget = UTIL_FindEntityByString(0, "classname", "info_displacer_xen_target");
@@ -599,7 +577,6 @@ void CDisplacer::Teleport()
 
     if(pTarget && g_engfuncs.pfnEntOffsetOfPEntity(pTarget->edict()))
     {
-#ifndef CLIENT_DLL
         if( m_pPlayer->IsOnRope() )
         {
             m_pPlayer->pev->movetype = MOVETYPE_WALK;
@@ -608,7 +585,6 @@ void CDisplacer::Teleport()
             m_pPlayer->GetRope()->DetachObject();
             m_pPlayer->SetRope( NULL );
         }
-#endif
 
         m_flTimeWeaponIdle = UTIL_WeaponTimeBase();
 
@@ -652,28 +628,49 @@ void CDisplacer::Teleport()
         m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.9;
     }
 #endif
-
-        int flags;
-#if defined( CLIENT_WEAPONS )
-        flags = FEV_NOTHOST;
-#else
-        flags = 0;
-#endif
-        // Used to play teleport sound.
-        PLAYBACK_EVENT_FULL(
-            flags,
-            m_pPlayer->edict(),
-            m_usDisplacer,
-            0.0,
-            (float *)&g_vecZero,
-            (float *)&g_vecZero,
-            0.0,
-            0.0,
-            0.0,
-            FIREMODE_BACKWARD,
-            0,
-            0);
     SetThink( NULL );
+}
+
+void CDisplacer::LightningEffect( void )
+{
+#ifndef CLIENT_DLL
+	int m_iBeams = 0;
+
+	if( g_pGameRules->IsMultiplayer())
+		return;
+
+	for( int i = 2; i < 5; ++i )
+	{
+		if( !m_pBeam[m_iBeams] )
+			m_pBeam[m_iBeams] = CBeam::BeamCreate( "sprites/lgtning.spr", 16 ); 
+		m_pBeam[m_iBeams]->EntsInit( m_pPlayer->entindex(), m_pPlayer->entindex() );
+ 		m_pBeam[m_iBeams]->SetStartAttachment( i );
+		m_pBeam[m_iBeams]->SetEndAttachment( i == 4 ? i - 2 : i + 1 );
+		m_pBeam[m_iBeams]->SetColor( 96, 128, 16 );
+		m_pBeam[m_iBeams]->SetBrightness( 240 );
+		m_pBeam[m_iBeams]->SetNoise( 60 );
+		m_pBeam[m_iBeams]->SetScrollRate( 30 );
+		m_pBeam[m_iBeams]->pev->scale = 10;
+		m_iBeams++;
+	}
+#endif
+}
+
+void CDisplacer::ClearBeams( void )
+{
+#ifndef CLIENT_DLL
+	if( g_pGameRules->IsMultiplayer())
+		return;
+
+	for( int i = 0; i < 3; i++ )
+	{
+		if( m_pBeam[i] )
+		{
+			UTIL_Remove( m_pBeam[i] );
+			m_pBeam[i] = NULL;
+		}
+	}
+#endif
 }
 
 //=========================================================

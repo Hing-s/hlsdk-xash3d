@@ -1790,72 +1790,11 @@ void EV_Displacer( event_args_t *args )
 
 	if( EV_IsLocal( idx ) )
 	{
-		//
-		// Used to play weapon animations.
-		//
-		// Fire state
-		switch( args->iparam1 )
-		{
-		case DISPLACER_SPINUP:
-			{
-				gEngfuncs.pEventAPI->EV_WeaponAnimation( DISPLACER_SPINUP, 0 );
-			}
-			break;
-		case DISPLACER_SPIN:
-			{
-				gEngfuncs.pEventAPI->EV_WeaponAnimation( DISPLACER_SPIN, 0 );
-			}
-			break;
-		case DISPLACER_FIRE:
-			{
-				gEngfuncs.pEventAPI->EV_WeaponAnimation( DISPLACER_FIRE, 0 );
-			}
-			break;
-		default:
-			break;
-		}
+		gEngfuncs.pEventAPI->EV_WeaponAnimation( DISPLACER_FIRE, 0 );
+		V_PunchAxis( 0, -2.0 );
 	}	
 
-	// Used to play weapon sounds.
-	//
-	// Fire state.
-	switch( args->iparam1 )
-	{
-	case DISPLACER_SPINUP:
-		{
-			// Fire mode
-			switch( args->iparam2 )
-			{
-			case 1: // FIRESTATE_FORWARD (primary attack)
-				gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_WEAPON, "weapons/displacer_spin.wav", 1, ATTN_NORM, 0, PITCH_NORM );
-				break;
-			case 2: // FIRESTATE_BACKWARD (secondary attack)
-				gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_WEAPON, "weapons/displacer_spin2.wav", 1, ATTN_NORM, 0, PITCH_NORM );
-				break;
-			default:
-				break;
-			}
-		}
-		break;
-	case DISPLACER_FIRE:
-		{
-			// Fire mode
-			switch( args->iparam2 )
-			{
-			case 1: // FIRESTATE_FORWARD (primary attack)
-				gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_WEAPON, "weapons/displacer_fire.wav", 1, ATTN_NORM, 0, PITCH_NORM );
-				break;
-			case 2: // FIRESTATE_BACKWARD (secondary attack)
-				gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_WEAPON, "weapons/displacer_self.wav", 1, ATTN_NORM, 0, PITCH_NORM );
-				break;
-			default:
-				break;
-			}
-		}
-		break;
-	default:
-		break;
-	}
+	gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_WEAPON, "weapons/displacer_fire.wav", 1, ATTN_NORM, 0, PITCH_NORM );
 }
 //======================
 //	    DISPLACER END 

@@ -1047,26 +1047,25 @@ private:
 class CDisplacer : public CBasePlayerWeapon
 {
 public:
-
 #ifndef CLIENT_DLL
-	int		Save(CSave &save);
-	int		Restore(CRestore &restore);
-	static	TYPEDESCRIPTION m_SaveData[];
+	int Save( CSave &save );
+	int Restore( CRestore &restore );
+	static TYPEDESCRIPTION m_SaveData[];
 #endif
-	void Spawn(void);
-	void Precache(void);
-	int iItemSlot(void) { return 4; }
-	int GetItemInfo(ItemInfo *p);
-	int AddToPlayer(CBasePlayer *pPlayer);
-	void PrimaryAttack(void);
-	void SecondaryAttack(void);
-	BOOL Deploy(void);
-	void Holster(int skiplocal = 0);
-	void WeaponIdle(void); 
+	void Spawn( void );
+	void Precache( void );
+	int iItemSlot( void ) { return 6; }
+	int GetItemInfo( ItemInfo *p );
+	int AddToPlayer( CBasePlayer *pPlayer );
+	void PrimaryAttack( void );
+	void SecondaryAttack( void );
+	BOOL Deploy( void );
+	void Holster( int skiplocal = 0 );
+	void WeaponIdle( void );
 
-	BOOL PlayEmptySound(void);
+	BOOL PlayEmptySound( void );
 
-	virtual BOOL UseDecrement(void)
+	virtual BOOL UseDecrement( void )
 	{
 #if defined( CLIENT_WEAPONS )
 		return TRUE;
@@ -1090,6 +1089,38 @@ private:
 	CBeam *m_pBeam[3];
 	int m_iFireMode;
 	unsigned short m_usDisplacer;
+};
+
+
+//=========================================================
+// Displacement field
+//=========================================================
+class CDisplacerBall : public CBaseEntity
+{
+public:
+	void Spawn( void );
+
+	static void Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity, Vector vecAngles);
+	static void SelfCreate(entvars_t *pevOwner, Vector vecStart);
+
+	void Touch(CBaseEntity *pOther);
+	void EXPORT ExplodeThink( void );
+	void EXPORT KillThink( void );
+	void Circle( void );
+
+	virtual int		Save(CSave &save);
+	virtual int		Restore(CRestore &restore);
+	static	TYPEDESCRIPTION m_SaveData[];
+
+	CBeam* m_pBeam[8];
+
+	void EXPORT FlyThink( void );
+	void ClearBeams( void );
+	void ArmBeam( int iSide );
+
+	int m_iBeams;
+
+	CBaseEntity *pRemoveEnt;
 };
 
 
@@ -1170,11 +1201,7 @@ public:
 	void DestroyEffect( void );
 	virtual BOOL UseDecrement(void)
 	{
-#if defined( CLIENT_WEAPONS )
-		return TRUE;
-#else
 		return FALSE;
-#endif
 	}
 private:
 	CBarnacleGrappleTip* m_pTip;
@@ -1443,36 +1470,6 @@ public:
 
 private:
 	unsigned short m_usSniper;
-};
-//=========================================================
-// Displacement field
-//=========================================================
-class CDisplacerBall : public CBaseEntity
-{
-public:
-	void Spawn( void );
-
-	static void Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity, Vector vecAngles);
-	static void SelfCreate(entvars_t *pevOwner, Vector vecStart);
-
-	void Touch(CBaseEntity *pOther);
-	void EXPORT ExplodeThink( void );
-	void EXPORT KillThink( void );
-	void Circle( void );
-
-	virtual int		Save(CSave &save);
-	virtual int		Restore(CRestore &restore);
-	static	TYPEDESCRIPTION m_SaveData[];
-
-	CBeam* m_pBeam[8];
-
-	void EXPORT FlyThink( void );
-	void ClearBeams( void );
-	void ArmBeam( int iSide );
-
-	int m_iBeams;
-
-	CBaseEntity *pRemoveEnt;
 };
 
 class CSporelauncher : public CShotgun
