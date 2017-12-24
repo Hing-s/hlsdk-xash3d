@@ -535,7 +535,7 @@ void CPenguin::PrimaryAttack()
 
 			m_fJustThrown = 1;
 
-			m_flNextPrimaryAttack = GetNextAttackDelay(0.3);
+			m_flNextPrimaryAttack = GetNextAttackDelay(1.9);
 			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
 		}
 	}

@@ -150,7 +150,7 @@ void CSpore :: FlyThink( void  )
 
 void CSpore::RocketTouch( CBaseEntity *pOther )
 {
-	if(pOther->pev->takedamage == DAMAGE_YES )
+	if(pOther->pev->takedamage)
 	{
 		entvars_t *pevOwner;
 		pevOwner = VARS( pev->owner );
@@ -163,7 +163,7 @@ void CSpore::RocketTouch( CBaseEntity *pOther )
 
 void CSpore::BounceTouch( CBaseEntity *pOther )
 {
-	if ( pOther->pev->takedamage != DAMAGE_YES )
+	if ( !pOther->pev->takedamage )
 	{
 		if( pev->flags & FL_SWIM )
 		{

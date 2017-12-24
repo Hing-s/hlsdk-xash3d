@@ -111,7 +111,7 @@ int CSporeAmmo::TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, flo
 	if (!borntime) // rigth '!borntime'  // blast in anytime 'borntime || !borntime'
 	{
 		CBaseEntity *attacker = GetClassPtr( (CBaseEntity*)pevAttacker );
-		Vector vecSrc = pev->origin + gpGlobals->v_forward * -30;
+		Vector vecSrc = pev->origin + gpGlobals->v_forward * -32;
 
 		MESSAGE_BEGIN( MSG_PAS, SVC_TEMPENTITY, pev->origin );
 			WRITE_BYTE( TE_EXPLOSION );		// This makes a dynamic light and the explosion sprites/sound
