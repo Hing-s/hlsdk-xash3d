@@ -282,7 +282,7 @@ void CGeneWormSpawn::Precache()
 void CGeneWormSpawn::Spawn()
 {
     pev->solid = SOLID_BBOX;
-    pev->movetype = MOVETYPE_FLY;
+    pev->movetype = MOVETYPE_NOCLIP;
     pev->effects = 0;
     pev->frame = 0;
     pev->scale = 1.5;
@@ -586,7 +586,7 @@ void CGeneWorm::Spawn()
     m_flNextActivityTime = gpGlobals->time + 6;
     m_flTakeHitTime = 0;
     m_flHitTime = 0;
-    m_flNextSequence = 99999999;
+    m_flNextSequence = gpGlobals->time * 1000;
 
 
     m_fRightEyeHit = FALSE;
@@ -1058,7 +1058,8 @@ void CGeneWorm::HuntThink(void)
         pev->frame = 0;
         pev->sequence = LookupSequence("idle");
         ResetSequenceInfo();
-        m_flNextSequence = 99999999;
+	m_fSequenceFinished = TRUE;
+        m_flNextSequence = gpGlobals->time * 1000;
     }
 
    if(m_fSequenceFinished)
