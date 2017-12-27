@@ -108,7 +108,7 @@ int CShockrifle::GetItemInfo(ItemInfo *p)
 
 BOOL CShockrifle::Deploy()
 {
-	return DefaultDeploy("models/v_shock.mdl", "models/p_shock.mdl", SHOCK_DRAW, "shockrifle");
+	return DefaultDeploy("models/v_shock.mdl", "models/p_shock.mdl", SHOCK_DRAW, "bow");
 }
 
 void CShockrifle::Holster(int skiplocal /* = 0 */)
@@ -179,13 +179,13 @@ void CShockrifle::PrimaryAttack()
 
 	// player "shoot" animation
 	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
+#ifndef CLIENT_DLL
+	if( g_pGameRules->IsMultiplayer() )
+		m_flNextPrimaryAttack = GetNextAttackDelay(0.1);
+	else
+#endif
+		m_flNextPrimaryAttack = GetNextAttackDelay(0.2);
 
-	m_flNextPrimaryAttack = GetNextAttackDelay(0.2);
-
-	if (m_flNextPrimaryAttack < UTIL_WeaponTimeBase())
-	{
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.2;
-	}
 	SetThink( &CShockrifle::ClearBeams );
 	pev->nextthink = gpGlobals->time + 0.08;
 

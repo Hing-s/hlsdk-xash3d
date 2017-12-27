@@ -110,7 +110,7 @@ int CSporelauncher::GetItemInfo(ItemInfo *p)
 
 BOOL CSporelauncher::Deploy()
 {
-	return DefaultDeploy("models/v_spore_launcher.mdl", "models/p_spore_launcher.mdl", SPLAUNCHER_DRAW1, "splauncher");
+	return DefaultDeploy("models/v_spore_launcher.mdl", "models/p_spore_launcher.mdl", SPLAUNCHER_DRAW1, "rpg");
 }
 
 void CSporelauncher::PrimaryAttack()

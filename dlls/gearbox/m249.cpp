@@ -111,7 +111,7 @@ int CM249::AddToPlayer(CBasePlayer *pPlayer)
 
 BOOL CM249::Deploy()
 {
-	return DefaultDeploy("models/v_saw.mdl", "models/p_saw.mdl", M249_DEPLOY, "m249");
+	return DefaultDeploy("models/v_saw.mdl", "models/p_saw.mdl", M249_DEPLOY, "mp5");
 }
 
 

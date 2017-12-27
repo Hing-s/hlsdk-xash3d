@@ -395,7 +395,7 @@ void CDisplacer::Precache(void)
 //=========================================================
 BOOL CDisplacer::Deploy()
 {
-	return DefaultDeploy("models/v_displacer.mdl", "models/p_displacer.mdl", DISPLACER_DRAW, "displacer", UseDecrement());
+	return DefaultDeploy("models/v_displacer.mdl", "models/p_displacer.mdl", DISPLACER_DRAW, "gauss", UseDecrement());
 }
 
 //=========================================================
@@ -407,7 +407,7 @@ void CDisplacer::Holster(int skiplocal /* = 0 */)
 
 	ClearBeams();
 	ClearSpin();
-
+   SetThink( NULL );
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 1.0f;
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0f;
 	SendWeaponAnim(DISPLACER_HOLSTER);
