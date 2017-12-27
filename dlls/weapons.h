@@ -1176,12 +1176,6 @@ public:
 		CHARGE	= 1
 	};
 
-	virtual int		Save( CSave &save );
-	virtual int		Restore( CRestore &restore );
-	static	TYPEDESCRIPTION m_SaveData[];
-
-	//CBarnacleGrapple();
-
 	void Precache( void );
 	void Spawn( void );
 	void EndAttack( void );

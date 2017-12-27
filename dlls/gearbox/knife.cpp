@@ -33,11 +33,11 @@ enum knife_e {
 	KNIFE_IDLE1 = 0,
 	KNIFE_DRAW,
 	KNIFE_HOLSTER,
-	KNIFE_ATTACK1HIT,
+	KNIFE_ATTACK1,
 	KNIFE_ATTACK1MISS,
-	KNIFE_ATTACK2MISS,
+	KNIFE_ATTACK2,
 	KNIFE_ATTACK2HIT,
-	KNIFE_ATTACK3MISS,
+	KNIFE_ATTACK3,
 	KNIFE_ATTACK3HIT,
 	KNIFE_IDLE2,
 	KNIFE_IDLE3,
@@ -92,7 +92,7 @@ int CKnife::GetItemInfo(ItemInfo *p)
 
 BOOL CKnife::Deploy()
 {
-	return DefaultDeploy("models/v_knife.mdl", "models/p_knife.mdl", KNIFE_DRAW, "knife");
+	return DefaultDeploy("models/v_knife.mdl", "models/p_knife.mdl", KNIFE_DRAW, "crowbar");
 }
 
 void CKnife::Holster(int skiplocal /* = 0 */)
@@ -151,7 +151,7 @@ int CKnife::Swing(int fFirst)
 	}
 #endif
 
-	PLAYBACK_EVENT_FULL(FEV_NOTHOST, m_pPlayer->edict(), m_usKnife,
+	PLAYBACK_EVENT_FULL(FEV_RELIABLE, m_pPlayer->edict(), m_usKnife,
 		0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0, 0, 0,
 		0.0, 0, 0.0);
 
@@ -172,7 +172,7 @@ int CKnife::Swing(int fFirst)
 		switch (((m_iSwing++) % 2) + 1)
 		{
 		case 0:
-			SendWeaponAnim(KNIFE_ATTACK1HIT); break;
+			SendWeaponAnim(KNIFE_ATTACK1); break;
 		case 1:
 			SendWeaponAnim(KNIFE_ATTACK2HIT); break;
 		case 2:
@@ -190,16 +190,9 @@ int CKnife::Swing(int fFirst)
 
 		ClearMultiDamage();
 
-		if ((m_flNextPrimaryAttack + 1 < UTIL_WeaponTimeBase()) || g_pGameRules->IsMultiplayer())
-		{
-			// first swing does full damage
-			pEntity->TraceAttack(m_pPlayer->pev, gSkillData.plrDmgKnife, gpGlobals->v_forward, &tr, DMG_CLUB);
-		}
-		else
-		{
-			// subsequent swings do half
-			pEntity->TraceAttack(m_pPlayer->pev, gSkillData.plrDmgKnife / 2, gpGlobals->v_forward, &tr, DMG_CLUB);
-		}
+		// do damage
+		pEntity->TraceAttack(m_pPlayer->pev, gSkillData.plrDmgKnife, gpGlobals->v_forward, &tr, DMG_CLUB);
+		
 		ApplyMultiDamage(m_pPlayer->pev, m_pPlayer->pev);
 
 		// play thwack, smack, or dong sound

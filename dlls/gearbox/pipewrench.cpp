@@ -106,7 +106,7 @@ BOOL CPipeWrench::Deploy()
 {
 	m_iFirestate = FIRESTATE_NONE;
 
-	return DefaultDeploy("models/v_pipe_wrench.mdl", "models/p_pipe_wrench.mdl", PIPEWRENCH_DRAW, "pipewrench");
+	return DefaultDeploy("models/v_pipe_wrench.mdl", "models/p_pipe_wrench.mdl", PIPEWRENCH_DRAW, "crowbar");
 }
 
 void CPipeWrench::Holster(int skiplocal /* = 0 */)

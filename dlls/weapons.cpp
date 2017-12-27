@@ -1621,14 +1621,6 @@ TYPEDESCRIPTION	CEagle::m_SaveData[] =
 
 IMPLEMENT_SAVERESTORE( CEagle, CBasePlayerWeapon )
 
-TYPEDESCRIPTION CBarnacleGrapple::m_SaveData[] =
-{
-	DEFINE_FIELD( CBarnacleGrapple, m_pBeam, FIELD_CLASSPTR ),
-	DEFINE_FIELD( CBarnacleGrapple, m_flShootTime, FIELD_TIME ),
-	DEFINE_FIELD( CBarnacleGrapple, m_FireState, FIELD_INTEGER ),
-};
-IMPLEMENT_SAVERESTORE( CBarnacleGrapple, CBasePlayerWeapon )
-
 TYPEDESCRIPTION	CM249::m_SaveData[] =
 {
 	DEFINE_FIELD( CM249, m_iReloadState, FIELD_INTEGER ),

@@ -153,7 +153,7 @@ void CShockrifle::PrimaryAttack()
 
 	vecSrc = m_pPlayer->GetGunPosition();
 	vecSrc = vecSrc + gpGlobals->v_forward * 8;
-	vecSrc = vecSrc + gpGlobals->v_right * 8;
+	vecSrc = vecSrc + gpGlobals->v_right * 12;
 	vecSrc = vecSrc + gpGlobals->v_up * -12;
 
 	CBaseEntity *pShock = CBaseEntity::Create("shock_beam", vecSrc, anglesAim, m_pPlayer->edict());
