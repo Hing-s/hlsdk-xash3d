@@ -140,17 +140,14 @@ void CDisplacerBall::Shoot(entvars_t *pevOwner, Vector vecStart, Vector vecVeloc
 void CDisplacerBall::SelfCreate(entvars_t *pevOwner,Vector vecStart)
 {
 	CDisplacerBall *pSelf = GetClassPtr((CDisplacerBall *)NULL);
-	pSelf->Spawn();
+    	pSelf->Spawn();
 	pSelf->ClearBeams();
 	UTIL_SetOrigin(pSelf->pev, vecStart);
 
 	pSelf->pev->owner = ENT(pevOwner);
-	pSelf->Circle();
-	pSelf->SetTouch( NULL );
-	pSelf->SetThink(&CDisplacerBall::KillThink);
+    	pSelf->pev->velocity.z -= 550;
 	pSelf->pev->nextthink = gpGlobals->time + ( g_pGameRules->IsMultiplayer() ? 0.2f : 0.5f );
 	pSelf->pev->classname = MAKE_STRING("displacer_ball");
-}
 
 void CDisplacerBall::Touch(CBaseEntity *pOther)
 {
