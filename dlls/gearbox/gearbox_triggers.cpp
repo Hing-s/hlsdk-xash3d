@@ -119,10 +119,6 @@ void CTriggerXenReturn::TeleportTouch(CBaseEntity* pOther)
 
 	if (pOther->IsPlayer())
 	{
-		// Ensure the current player is marked as being
-		// on earth.
-		((CBasePlayer*)pOther)->m_fInXen = FALSE;
-
 		// Reset gravity to default.
 		pOther->pev->gravity = 1.0f;
 	}

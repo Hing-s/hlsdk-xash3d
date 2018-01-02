@@ -148,6 +148,7 @@ void CDisplacerBall::SelfCreate(entvars_t *pevOwner,Vector vecStart)
     	pSelf->pev->velocity.z -= 550;
 	pSelf->pev->nextthink = gpGlobals->time + ( g_pGameRules->IsMultiplayer() ? 0.2f : 0.5f );
 	pSelf->pev->classname = MAKE_STRING("displacer_ball");
+}
 
 void CDisplacerBall::Touch(CBaseEntity *pOther)
 {
@@ -404,7 +405,7 @@ void CDisplacer::Holster(int skiplocal /* = 0 */)
 
 	ClearBeams();
 	ClearSpin();
-   SetThink( NULL );
+	SetThink( NULL );
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 1.0f;
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0f;
 	SendWeaponAnim(DISPLACER_HOLSTER);
@@ -530,7 +531,7 @@ void CDisplacer::Displace( void )
 	EMIT_SOUND( edict(), CHAN_WEAPON, "weapons/displacer_fire.wav", 1, ATTN_NORM );
 
 	// player "shoot" animation
-        m_pPlayer->SetAnimation( PLAYER_ATTACK1 );	
+	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );	
 
 	m_pPlayer->pev->punchangle.x -= 2;
 #ifndef CLIENT_DLL
@@ -555,79 +556,63 @@ void CDisplacer::Displace( void )
 //=========================================================
 void CDisplacer::Teleport()
 {
-    CBaseEntity *pTarget;
-    edict_t *pEnt;
-    TraceResult tr;
-    ClearBeams();
-    ClearSpin();
+	CBaseEntity *pTarget;
+	edict_t *pEnt;
+	TraceResult tr;
+	ClearBeams();
+	ClearSpin();
 #ifndef CLIENT_DLL
-    if(!g_pGameRules->IsMultiplayer() || g_pGameRules->IsCoOp())
-    {
-        pTarget = UTIL_FindEntityByString(0, "classname", "info_displacer_xen_target");
-    }
-    else
-    {
-        // Randomize the destination in multiplayer
-        for( int i = RANDOM_LONG( 1, 5 ); i > 0; i-- )
-            pEnt = FIND_ENTITY_BY_CLASSNAME(pEnt, "info_player_deathmatch");
-        if( pEnt )
-            pTarget = GetClassPtr((CBaseEntity *)VARS(pEnt));
-    }
+	if(!g_pGameRules->IsMultiplayer() || g_pGameRules->IsCoOp())
+		pTarget = UTIL_FindEntityByString(0, "classname", "info_displacer_xen_target");
+	else
+		pTarget = GetClassPtr( (CBaseEntity *)VARS( EntSelectSpawnPoint( m_pPlayer ) ) );
 
-    if(pTarget && g_engfuncs.pfnEntOffsetOfPEntity(pTarget->edict()))
-    {
-        if( m_pPlayer->IsOnRope() )
-        {
-            m_pPlayer->pev->movetype = MOVETYPE_WALK;
-            m_pPlayer->pev->solid = SOLID_SLIDEBOX;
-            m_pPlayer->SetOnRopeState( false );
-            m_pPlayer->GetRope()->DetachObject();
-            m_pPlayer->SetRope( NULL );
-        }
+	if(pTarget && g_engfuncs.pfnEntOffsetOfPEntity(pTarget->edict()))
+	{
+		if( m_pPlayer->IsOnRope() )
+		{
+			m_pPlayer->pev->movetype = MOVETYPE_WALK;
+			m_pPlayer->pev->solid = SOLID_SLIDEBOX;
+			m_pPlayer->SetOnRopeState( false );
+			m_pPlayer->GetRope()->DetachObject();
+			m_pPlayer->SetRope( NULL );
+		}
 
-        m_flTimeWeaponIdle = UTIL_WeaponTimeBase();
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase();
 
-        UseAmmo(DISPLACER_SECONDARY_USAGE);
+		UseAmmo(DISPLACER_SECONDARY_USAGE);
 
-        EMIT_SOUND( edict(), CHAN_BODY, "weapons/displacer_self.wav", 1, ATTN_NORM );
-        CDisplacerBall::SelfCreate(m_pPlayer->pev, m_pPlayer->pev->origin);
+		EMIT_SOUND( edict(), CHAN_BODY, "weapons/displacer_self.wav", 1, ATTN_NORM );
+		CDisplacerBall::SelfCreate(m_pPlayer->pev, m_pPlayer->pev->origin);
 
-        // make origin adjustments (origin in center, not at feet)
+		// make origin adjustments (origin in center, not at feet)
 
-        m_pPlayer->pev->flags &= ~FL_ONGROUND;
+		m_pPlayer->pev->flags &= ~FL_ONGROUND;
+		UTIL_TraceHull(pTarget->pev->origin, pTarget->pev->origin, dont_ignore_monsters, human_hull, NULL, &tr);
 
-        UTIL_TraceHull(pTarget->pev->origin, pTarget->pev->origin, dont_ignore_monsters, human_hull, NULL, &tr);
+		if(tr.fAllSolid && tr.fStartSolid)
+			UTIL_SetOrigin(m_pPlayer->pev, pTarget->pev->origin+Vector(0,0,72));
+		else
+			UTIL_SetOrigin(m_pPlayer->pev, pTarget->pev->origin);
 
-        if(tr.fAllSolid && tr.fStartSolid)
-            UTIL_SetOrigin(m_pPlayer->pev, pTarget->pev->origin+Vector(0,0,72));
-        else
-            UTIL_SetOrigin(m_pPlayer->pev, pTarget->pev->origin);
+		m_pPlayer->pev->angles = pTarget->pev->angles;
 
-        m_pPlayer->pev->angles = pTarget->pev->angles;
+		m_pPlayer->pev->v_angle = pTarget->pev->angles;
 
-        m_pPlayer->pev->v_angle = pTarget->pev->angles;
+		m_pPlayer->pev->fixangle = TRUE;
+		m_pPlayer->pev->velocity = m_pPlayer->pev->basevelocity = g_vecZero;
 
-        m_pPlayer->pev->fixangle = TRUE;
-        m_pPlayer->pev->velocity = m_pPlayer->pev->basevelocity = g_vecZero;
-
-        m_pPlayer->m_fInXen = TRUE;
-
-        if( !g_pGameRules->IsMultiplayer())
-        {
-            if (m_pPlayer->m_fInXen)
-                m_pPlayer->pev->gravity = 0.5;
-            else
-                m_pPlayer->pev->gravity = 1.0;
-        }
-    }
-    else
-    {
-        EMIT_SOUND( edict(), CHAN_BODY, "buttons/button10.wav", 1, ATTN_NORM );
-        m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 3.0;
-        m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.9;
-    }
+		if( !g_pGameRules->IsMultiplayer())
+			m_pPlayer->pev->gravity = 0.6;
+	}
+	else
+	{
+		EMIT_SOUND( edict(), CHAN_BODY, "buttons/button10.wav", 1, ATTN_NORM );
+		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 3.0;
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.9;
+	}
 #endif
-    SetThink( NULL );
+	SetThink( NULL );
 }
 
 void CDisplacer::LightningEffect( void )

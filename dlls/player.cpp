@@ -116,7 +116,6 @@ TYPEDESCRIPTION	CBasePlayer::m_playerSaveData[] =
 	DEFINE_FIELD( CBasePlayer, m_iHideHUD, FIELD_INTEGER ),
 	DEFINE_FIELD( CBasePlayer, m_iFOV, FIELD_INTEGER ),
 
-	DEFINE_FIELD(CBasePlayer, m_fInXen, FIELD_BOOLEAN),
 	DEFINE_FIELD(CBasePlayer, m_fIsFrozen, FIELD_BOOLEAN),
 	DEFINE_FIELD(CBasePlayer, m_pRope, FIELD_CLASSPTR),
 
@@ -2979,8 +2978,6 @@ void CBasePlayer::Spawn( void )
 	m_lastx = m_lasty = 0;
 
 	m_flNextChatTime = gpGlobals->time;
-
-	m_fInXen = FALSE;
 	m_fIsFrozen = FALSE;
 
 	g_pGameRules->PlayerSpawn( this );
