@@ -3262,6 +3262,7 @@ void CBaseMonster::MonsterInitDead( void )
 	BecomeDead();
 	SetThink( &CBaseMonster::CorpseFallThink );
 	pev->nextthink = gpGlobals->time + 0.5;
+	GlowShellOff();
 }
 
 //=========================================================
@@ -3417,22 +3418,25 @@ BOOL CBaseMonster::ShouldFadeOnDeath( void )
 
 void CBaseMonster::GlowShellOn( Vector color, float flDuration )
 {
-	m_prevRenderMode = pev->rendermode;
-	m_prevRenderColor = pev->rendercolor;
-	m_prevRenderAmt = pev->renderamt;
-	m_prevRenderFx = pev->renderfx;
+	if( !m_glowShellUpdate )
+	{
+		m_prevRenderMode = pev->rendermode;
+		m_prevRenderColor = pev->rendercolor;
+		m_prevRenderAmt = pev->renderamt;
+		m_prevRenderFx = pev->renderfx;
 
-	pev->renderamt = 5;
-	pev->rendercolor = color;
-	pev->renderfx = kRenderFxGlowShell;
-	//pev->rendermode = kRenderGlow;
+		pev->renderamt = 5;
+		pev->rendercolor = color;
+		pev->renderfx = kRenderFxGlowShell;
 
-	m_glowShellColor = color;
+		m_glowShellColor = color;
 
-	m_glowShellDuration = flDuration;
-	m_glowShellStartTime = gpGlobals->time;
+		m_glowShellDuration = flDuration;
+		m_glowShellStartTime = gpGlobals->time;
 
-	m_glowShellUpdate = TRUE;
+		m_glowShellUpdate = TRUE;
+	}
+	m_glowShellDuration += flDuration;
 }
 
 void CBaseMonster::GlowShellOff( void )
@@ -3451,7 +3455,7 @@ void CBaseMonster::GlowShellUpdate( void )
 {
 	if( m_glowShellUpdate )
 	{
-		if( gpGlobals->time > m_glowShellTime || pev->deadflag == DEAD_DEAD )
+		if( gpGlobals->time - m_glowShellStartTime >= m_glowShellDuration )
 			GlowShellOff();
 	}
 }
