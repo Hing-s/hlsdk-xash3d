@@ -197,9 +197,9 @@ void CShock::Touch(CBaseEntity *pOther)
 void CShock::CreateEffects()
 {
 	m_pSprite = CSprite::SpriteCreate( "sprites/flare3.spr", pev->origin, FALSE );
-	m_pSprite->SetAttachment( edict(), 0 );
-	m_pSprite->pev->scale = 0.4;
-	m_pSprite->SetTransparency( kRenderTransAdd, 255, 255, 255, 170, kRenderFxNoDissipation );
+	m_pSprite->SetAttachment( edict(), 2 );
+	m_pSprite->pev->scale = 0.35;
+	m_pSprite->SetTransparency( kRenderTransAdd, 255, 255, 255, 70, kRenderFxNoDissipation );
 	m_pSprite->pev->spawnflags |= SF_SPRITE_TEMPORARY;
 	m_pSprite->pev->flags |= FL_SKIPLOCALHOST;
 

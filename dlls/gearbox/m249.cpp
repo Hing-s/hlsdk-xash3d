@@ -132,8 +132,8 @@ void CM249::PrimaryAttack()
 		return;
 	}
 
-	m_pPlayer->pev->punchangle.x = RANDOM_FLOAT( 1.0f, 2.5f );
-	m_pPlayer->pev->punchangle.y = RANDOM_FLOAT( -1.0f, -2.5f );
+	m_pPlayer->pev->punchangle.x = RANDOM_FLOAT( -1.0f, 1.0f );
+	m_pPlayer->pev->punchangle.y = RANDOM_FLOAT( -2.0f, 2.0f );
 
 	m_pPlayer->m_iWeaponVolume = NORMAL_GUN_VOLUME;
 	m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;
@@ -176,14 +176,51 @@ void CM249::PrimaryAttack()
 
 
 #ifndef CLIENT_DLL
-	m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * (50 + (RANDOM_LONG(1, 2) * 2));
+	Vector vecVelocity = m_pPlayer->pev->velocity;
+
+	float flZVel = vecVelocity.z;
+	Vector vecInvPushDir = gpGlobals->v_forward * 35.0;
+
+	float flNewZVel = CVAR_GET_FLOAT( "sv_maxspeed" );
+
+	if( vecInvPushDir.z >= 10.0 )
+		flNewZVel = vecInvPushDir.z;
+
+	Vector vecNewVel;
+
+	if( !g_pGameRules->IsDeathmatch() )
+	{
+		Vector vecNewVel = vecVelocity - vecInvPushDir;
+
+		//Restore Z velocity to make deathmatch easier.
+		vecNewVel.z = flZVel;
+	}
+	else
+	{
+		Vector vecNewVel = vecVelocity;
+
+		float flZTreshold = -( flNewZVel + 100.0 );
+
+		if( vecVelocity.x > flZTreshold )
+		{
+			vecNewVel.x -= vecInvPushDir.x;
+		}
+
+		if( vecVelocity.y > flZTreshold )
+		{
+			vecNewVel.y -= vecInvPushDir.y;
+		}
+
+		vecNewVel.z -= vecInvPushDir.z;
+	}
+	m_pPlayer->pev->velocity.z = vecNewVel.z;
 #endif
 
 	if (!m_iClip && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 		// HEV suit - indicate out of ammo condition
 		m_pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0);
 
-	m_flNextPrimaryAttack = GetNextAttackDelay(0.1);
+	m_flNextPrimaryAttack = GetNextAttackDelay(0.067);
 
 	if (m_flNextPrimaryAttack < UTIL_WeaponTimeBase())
 		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.1;
@@ -197,7 +234,7 @@ void CM249::Reload(void)
 	if (m_pPlayer->ammo_556 <= 0)
 		return;
 
-	DefaultReload(M249_MAX_CLIP, M249_RELOAD1, 1.5);
+	DefaultReload(M249_MAX_CLIP, M249_RELOAD1, 1);
 }
 
 

@@ -105,9 +105,17 @@ int CShockrifle::GetItemInfo(ItemInfo *p)
 	return 1;
 }
 
-
 BOOL CShockrifle::Deploy()
 {
+#ifdef CLIENT_DLL
+	if( bIsMultiplayer() )
+#else
+	if( g_pGameRules->IsMultiplayer() )
+#endif
+		m_flRechargeTime = gpGlobals->time + 0.25;
+	else
+		m_flRechargeTime = gpGlobals->time + 0.5;
+
 	return DefaultDeploy("models/v_shock.mdl", "models/p_shock.mdl", SHOCK_DRAW, "bow");
 }
 
@@ -115,19 +123,17 @@ void CShockrifle::Holster(int skiplocal /* = 0 */)
 {
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 0.5;
 	SendWeaponAnim(SHOCK_HOLSTER);
-
-	//!!!HACKHACK - can't select hornetgun if it's empty! no way to get ammo for it, either.
-	if (!m_pPlayer->m_rgAmmo[PrimaryAmmoIndex()])
-	{
-		m_pPlayer->m_rgAmmo[PrimaryAmmoIndex()] = 1;
-	}
 	ClearBeams();
 }
 
+void CShockrifle::ItemPostFrame( void )
+{
+	CBasePlayerWeapon::ItemPostFrame();
+	Reload();
+}
 
 void CShockrifle::PrimaryAttack()
 {
-	Reload();
 	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 		return;
 
@@ -142,6 +148,7 @@ void CShockrifle::PrimaryAttack()
 #endif
 		return;
 	}
+
 	CreateChargeEffect();
 
 #ifndef CLIENT_DLL
@@ -150,18 +157,13 @@ void CShockrifle::PrimaryAttack()
 	UTIL_MakeVectors(m_pPlayer->pev->v_angle);
 
 	Vector vecSrc;
-
-	vecSrc = m_pPlayer->GetGunPosition();
-	vecSrc = vecSrc + gpGlobals->v_forward * 8;
-	vecSrc = vecSrc + gpGlobals->v_right * 12;
-	vecSrc = vecSrc + gpGlobals->v_up * -12;
+	vecSrc = m_pPlayer->GetGunPosition() + gpGlobals->v_forward * 8 + gpGlobals->v_right * 12 + gpGlobals->v_up * -12;
 
 	CBaseEntity *pShock = CBaseEntity::Create("shock_beam", vecSrc, anglesAim, m_pPlayer->edict());
 	pShock->pev->velocity = gpGlobals->v_forward * 2000;
 
-	m_flRechargeTime = gpGlobals->time + 0.5;
+	m_flRechargeTime = gpGlobals->time + 1;
 #endif
-
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;
 
 
@@ -179,17 +181,26 @@ void CShockrifle::PrimaryAttack()
 
 	// player "shoot" animation
 	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
-#ifndef CLIENT_DLL
+#ifdef CLIENT_DLL
+	if( bIsMultiplayer() )
+#else
 	if( g_pGameRules->IsMultiplayer() )
+#endif
 		m_flNextPrimaryAttack = GetNextAttackDelay(0.1);
 	else
-#endif
 		m_flNextPrimaryAttack = GetNextAttackDelay(0.2);
 
 	SetThink( &CShockrifle::ClearBeams );
 	pev->nextthink = gpGlobals->time + 0.08;
 
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat(m_pPlayer->random_seed, 10, 15);
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.33;
+}
+
+void CShockrifle::SecondaryAttack( void )
+{
+	SendWeaponAnim( SHOCK_IDLE1 );
+	m_flNextSecondaryAttack = GetNextAttackDelay(3.3f);
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 3.3f;
 }
 
 void CShockrifle::Reload(void)
@@ -202,31 +213,23 @@ void CShockrifle::Reload(void)
 		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_ITEM, "weapons/shock_recharge.wav", 1, ATTN_NORM);
 
 		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]++;
-		m_flRechargeTime += 0.5;
+#ifndef CLIENT_DLL
+		if( g_pGameRules->IsMultiplayer() )
+			m_flRechargeTime += 0.25;
+		else
+			m_flRechargeTime += 0.5;
+#endif
 	}
 }
 
 
 void CShockrifle::WeaponIdle(void)
 {
-	Reload();
-
 	if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase())
 		return;
 
-	int iAnim;
-	float flRand = UTIL_SharedRandomFloat(m_pPlayer->random_seed, 0, 1);
-	if (flRand <= 0.5)
-	{
-		iAnim = SHOCK_IDLE1;
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 3.3f;
-	}
-	else
-	{
-		iAnim = SHOCK_IDLE3;
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 3.4f;
-	}
-	SendWeaponAnim(iAnim);
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 3.3f;
+	SendWeaponAnim(SHOCK_IDLE3);
 }
 
 #endif

@@ -23,6 +23,7 @@
 #include	"schedule.h"
 #include	"player.h"
 #include	"weapons.h"
+#include	"triggers.h"
 
 #define GENEWORM_LEVEL0					0
 #define GENEWORM_LEVEL1					1
@@ -638,7 +639,7 @@ void CGeneWorm::StartThink(void)
     pev->frame = 0;
     pev->sequence = LookupSequence("entry");
     ResetSequenceInfo();
-
+    m_flNextSequence = gpGlobals->time;
     m_flNextMeleeTime = gpGlobals->time;
     m_flNextRangeTime = gpGlobals->time;
 
@@ -684,18 +685,14 @@ void CGeneWorm::DyingThink(void)
     DispatchAnimEvents();
     StudioFrameAdvance();
 
-    if(pev->deadflag == DEAD_DEAD)
-    {
-        UTIL_Remove( this );
-        return;
-    }
-
     if(pev->deadflag == DEAD_DYING)
     {
          pev->renderamt--;
+         if( pev->renderamt == 0 )
+               UTIL_Remove( this );
          if(gpGlobals->time - m_flDeathStart >= 15)
          {
-             if((entity = UTIL_FindEntityByClassname(0, "player")) != NULL)
+             if(entity = UTIL_FindEntityByClassname(0, "player"))
              {
                  UTIL_ScreenFade(entity, Vector(0,255,0), 15, 15, 255, 0);
                  entity->pev->flags &= ~FL_FROZEN;
@@ -706,6 +703,7 @@ void CGeneWorm::DyingThink(void)
 
     if(pev->deadflag == DEAD_NO)
     {
+        CBaseMonster *monster;
         pev->frame = 0;
         pev->sequence = LookupSequence("death");
 
@@ -740,13 +738,7 @@ void CGeneWorm::DyingThink(void)
             UTIL_Remove(m_pBall);
             m_pBall = NULL;
         }
-    }
-
-    if((entity = UTIL_FindEntityByClassname(0, "monster_shocktrooper")) != NULL)
-    {
-        entity->SUB_StartFadeOut();
-
-        while((entity = UTIL_FindEntityByClassname(entity, "monster_shocktrooper")))
+        while(entity = UTIL_FindEntityByClassname(entity, "monster_shocktrooper"))
             entity->SUB_StartFadeOut();
     }
 }
@@ -1053,20 +1045,26 @@ void CGeneWorm::HuntThink(void)
     }
 
     // Fix sequence loops
-    if(gpGlobals->time - m_flNextSequence >= 2)
-    {
+   if(gpGlobals->time - m_flNextSequence >= 10 && !m_fHasEntered)
+   {
+       pev->frame = 0;
+       pev->sequence = LookupSequence("idle");
+       ResetSequenceInfo();
+       m_fSequenceFinished = TRUE;
+       m_fHasEntered = TRUE;
+       m_flNextSequence = gpGlobals->time * 1000;
+   }
+   else if(m_fHasEntered && gpGlobals->time - m_flNextSequence >= 2)
+   {
         pev->frame = 0;
         pev->sequence = LookupSequence("idle");
         ResetSequenceInfo();
-	m_fSequenceFinished = TRUE;
+        m_fSequenceFinished = TRUE;
         m_flNextSequence = gpGlobals->time * 1000;
-    }
-
+   }
+   
    if(m_fSequenceFinished)
    {
-      if(!m_fHasEntered)
-          m_fHasEntered = TRUE;
-
       pev->frame = 0;
       NextActivity();
       ResetSequenceInfo();
