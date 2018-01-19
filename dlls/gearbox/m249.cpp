@@ -176,44 +176,37 @@ void CM249::PrimaryAttack()
 
 
 #ifndef CLIENT_DLL
-	Vector vecVelocity = m_pPlayer->pev->velocity;
+        Vector vecVelocity = m_pPlayer->pev->velocity;
+        Vector vecInvPushDir = gpGlobals->v_forward * 35.0;
 
-	float flZVel = vecVelocity.z;
-	Vector vecInvPushDir = gpGlobals->v_forward * 35.0;
+        float flNewZVel = CVAR_GET_FLOAT( "sv_maxspeed" );
 
-	float flNewZVel = CVAR_GET_FLOAT( "sv_maxspeed" );
+        if( vecInvPushDir.z >= 10.0 )
+            flNewZVel = vecInvPushDir.z;
 
-	if( vecInvPushDir.z >= 10.0 )
-		flNewZVel = vecInvPushDir.z;
+        Vector vecNewVel;
 
-	Vector vecNewVel;
+        if( !g_pGameRules->IsDeathmatch() )
+        {
+            vecNewVel = vecVelocity - vecInvPushDir;
+        }
+        else
+        {
+            vecNewVel = vecVelocity;
 
-	if( !g_pGameRules->IsDeathmatch() )
-	{
-		Vector vecNewVel = vecVelocity - vecInvPushDir;
+            float flZTreshold = -( flNewZVel + 100.0 );
 
-		//Restore Z velocity to make deathmatch easier.
-		vecNewVel.z = flZVel;
-	}
-	else
-	{
-		Vector vecNewVel = vecVelocity;
+            if( vecVelocity.x > flZTreshold )
+            {
+                vecNewVel.x -= vecInvPushDir.x;
+            }
 
-		float flZTreshold = -( flNewZVel + 100.0 );
-
-		if( vecVelocity.x > flZTreshold )
-		{
-			vecNewVel.x -= vecInvPushDir.x;
-		}
-
-		if( vecVelocity.y > flZTreshold )
-		{
-			vecNewVel.y -= vecInvPushDir.y;
-		}
-
-		vecNewVel.z -= vecInvPushDir.z;
-	}
-	m_pPlayer->pev->velocity.z = vecNewVel.z;
+            if( vecVelocity.y > flZTreshold )
+            {
+                vecNewVel.y -= vecInvPushDir.y;
+            }
+        }
+        m_pPlayer->pev->velocity = vecNewVel;
 #endif
 
 	if (!m_iClip && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
