@@ -282,6 +282,8 @@ void CGeneWormSpawn::Precache()
 
 void CGeneWormSpawn::Spawn()
 {
+    Precache();
+
     pev->solid = SOLID_BBOX;
     pev->movetype = MOVETYPE_NOCLIP;
     pev->effects = 0;
@@ -419,11 +421,8 @@ public:
     void DeathSound(void);
     void IdleSound(void);
 
-    int		Level( float dz );
-    int		MyEnemyLevel(void);
-    float	MyEnemyHeight(void);
-
     BOOL ClawAttack();
+    BOOL CanLoopSequence();
 
     Vector m_vecTarget;
     Vector m_posTarget;
@@ -445,8 +444,7 @@ public:
     float m_flNextMeleeTime;
     float m_flNextRangeTime;
     float m_flDeathStart;
-    float m_flNextActivityTime;
-    float m_flNextSequence;
+    float m_flLastSequence;
 
     BOOL m_fActivated;
     BOOL m_fRightEyeHit;
@@ -454,15 +452,11 @@ public:
     BOOL m_fGetMad;
     BOOL m_OrificeHit;
     BOOL m_fSpiting;
-    BOOL m_fHasEntered;
     BOOL m_fSpawningTrooper;
 
     int m_iLevel;
     int m_iWasHit;
     int m_iMaxHitTimes;
-
-    void PlaySequenceAttack( int side, BOOL bMelee );
-    void PlaySequencePain( int side );
 
     static const char *pAttackSounds[];
     static const char *pDeathSounds[];
@@ -493,14 +487,12 @@ TYPEDESCRIPTION CGeneWorm::m_SaveData[] =
     DEFINE_FIELD(CGeneWorm, m_flOrificeOpenTime, FIELD_FLOAT),
     DEFINE_FIELD(CGeneWorm, m_fSpawningTrooper, FIELD_BOOLEAN),
     DEFINE_FIELD(CGeneWorm, m_fActivated, FIELD_BOOLEAN),
-    DEFINE_FIELD(CGeneWorm, m_fHasEntered, FIELD_BOOLEAN),
     DEFINE_FIELD(CGeneWorm, m_fSpiting, FIELD_BOOLEAN),
     DEFINE_FIELD(CGeneWorm, m_flDeathStart, FIELD_FLOAT),
     DEFINE_FIELD(CGeneWorm, m_flMadDelayTime, FIELD_FLOAT),
     DEFINE_FIELD(CGeneWorm, m_iLevel, FIELD_INTEGER),
     DEFINE_FIELD(CGeneWorm, m_fGetMad, FIELD_BOOLEAN),
     DEFINE_FIELD(CGeneWorm, m_flSpitStartTime, FIELD_FLOAT),
-    DEFINE_FIELD(CGeneWorm, m_flNextSequence, FIELD_FLOAT)
 };
 IMPLEMENT_SAVERESTORE(CGeneWorm, CBaseMonster)
 
@@ -584,15 +576,12 @@ void CGeneWorm::Spawn()
     m_flSpitStartTime = gpGlobals->time;
     m_flOrificeOpenTime = gpGlobals->time;
     m_flMadDelayTime = gpGlobals->time;
-    m_flNextActivityTime = gpGlobals->time + 6;
     m_flTakeHitTime = 0;
     m_flHitTime = 0;
-    m_flNextSequence = gpGlobals->time * 1000;
 
 
     m_fRightEyeHit = FALSE;
     m_fLeftEyeHit = FALSE;
-    m_fHasEntered = FALSE;
     m_fGetMad = FALSE;
     m_OrificeHit = FALSE;
     m_fActivated = FALSE;
@@ -639,7 +628,6 @@ void CGeneWorm::StartThink(void)
     pev->frame = 0;
     pev->sequence = LookupSequence("entry");
     ResetSequenceInfo();
-    m_flNextSequence = gpGlobals->time;
     m_flNextMeleeTime = gpGlobals->time;
     m_flNextRangeTime = gpGlobals->time;
 
@@ -688,22 +676,19 @@ void CGeneWorm::DyingThink(void)
     if(pev->deadflag == DEAD_DYING)
     {
          pev->renderamt--;
+
          if( pev->renderamt == 0 )
                UTIL_Remove( this );
+
          if(gpGlobals->time - m_flDeathStart >= 15)
          {
              if(entity = UTIL_FindEntityByClassname(0, "player"))
-             {
-                 UTIL_ScreenFade(entity, Vector(0,255,0), 15, 15, 255, 0);
-                 entity->pev->flags &= ~FL_FROZEN;
-                 FireTargets("GeneWormTeleport", entity, entity, USE_TOGGLE, 0);
-              }
+                FireTargets("GeneWormTeleport", entity, entity, USE_TOGGLE, 0);
          }
     }
 
     if(pev->deadflag == DEAD_NO)
     {
-        CBaseMonster *monster;
         pev->frame = 0;
         pev->sequence = LookupSequence("death");
 
@@ -1029,7 +1014,7 @@ void CGeneWorm::HuntThink(void)
         return;
 
     DispatchAnimEvents();
-    StudioFrameAdvance();
+    StudioFrameAdvance(0);
 
 
     if(pev->rendermode == kRenderTransTexture)
@@ -1043,29 +1028,12 @@ void CGeneWorm::HuntThink(void)
             pev->rendermode = kRenderNormal;
         }
     }
-
-    // Fix sequence loops
-   if(gpGlobals->time - m_flNextSequence >= 10 && !m_fHasEntered)
-   {
-       pev->frame = 0;
-       pev->sequence = LookupSequence("idle");
-       ResetSequenceInfo();
-       m_fSequenceFinished = TRUE;
-       m_fHasEntered = TRUE;
-       m_flNextSequence = gpGlobals->time * 1000;
-   }
-   else if(m_fHasEntered && gpGlobals->time - m_flNextSequence >= 2)
-   {
-        pev->frame = 0;
-        pev->sequence = LookupSequence("idle");
-        ResetSequenceInfo();
-        m_fSequenceFinished = TRUE;
-        m_flNextSequence = gpGlobals->time * 1000;
-   }
    
    if(m_fSequenceFinished)
    {
-      pev->frame = 0;
+      if(!CanLoopSequence() && !m_fSequenceLoops)
+          pev->frame = 0;
+
       NextActivity();
       ResetSequenceInfo();
    }
@@ -1146,7 +1114,6 @@ void CGeneWorm::HandleAnimEvent(MonsterEvent_t *pEvent)
             m_fSpawningTrooper = FALSE;
             m_OrificeHit = FALSE;
             m_orificeGlow = NULL;
-            m_flNextSequence = gpGlobals->time;
 
             EMIT_SOUND_DYN(ENT(pev), 1, "debris/beamstart7.wav", 1, 0.1, 0, RANDOM_LONG(-5, 5)+100);
         }
@@ -1219,30 +1186,11 @@ void CGeneWorm::IdleSound(void)
     EMIT_SOUND(ENT(pev), CHAN_VOICE, RANDOM_SOUND_ARRAY(pIdleSounds), VOL_NORM, ATTN_NORM);
 }
 
-int CGeneWorm::Level(float dz)
+
+BOOL CGeneWorm::CanLoopSequence()
 {
-    if (dz < GENEWORM_LEVEL1_HEIGHT)
-        return GENEWORM_LEVEL0;
-
-    return GENEWORM_LEVEL1;
-}
-int CGeneWorm::MyEnemyLevel(void)
-{
-    if (!m_hEnemy)
-        return -1;
-
-    return Level(m_hEnemy->pev->origin.z);
-}
-
-float CGeneWorm::MyEnemyHeight(void)
-{
-    switch (m_iLevel)
-    {
-    case GENEWORM_LEVEL0:
-        return GENEWORM_LEVEL0_HEIGHT;
-    case GENEWORM_LEVEL1:
-        return GENEWORM_LEVEL1_HEIGHT;
-    }
-
-    return GENEWORM_LEVEL1_HEIGHT;
+    if(pev->sequence == LookupSequence("bigpain4") ||
+       pev->sequence == LookupSequence("entry"))
+        return TRUE;
+    return FALSE;
 }
