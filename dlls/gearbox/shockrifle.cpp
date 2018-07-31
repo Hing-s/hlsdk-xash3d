@@ -210,7 +210,7 @@ void CShockrifle::Reload(void)
 
 	while (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] < SHOCK_MAX_CARRY && m_flRechargeTime < gpGlobals->time)
 	{
-		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_ITEM, "weapons/shock_recharge.wav", 1, ATTN_NORM);
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_ITEM, "weapons/shock_recharge.wav", VOL_NORM, ATTN_NORM);
 
 		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]++;
 #ifndef CLIENT_DLL
