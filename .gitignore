@@ -11,3 +11,14 @@ android/bin/
 android/libs
 android/obj
 build/
+*.dll
+*.pdb
+build/
+CMakeLists.txt.user
+cmake_install.cmake
+*.orig
+*.cbp
+*.dsw
+*.vsxproj
+*.vsproj
+*.sln

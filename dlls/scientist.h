@@ -95,21 +95,23 @@ protected:
 	float m_fearTime;
 };
 
+
 //=========================================================
 // Dead Scientist PROP
 //=========================================================
 class CDeadScientist : public CBaseMonster
 {
 public:
-	virtual void Spawn(void);
-	int	Classify(void) { return	CLASS_HUMAN_PASSIVE; }
+	void Spawn( void );
+	int Classify( void )
+	{
+		return CLASS_HUMAN_PASSIVE;
+	}
 
-	void KeyValue(KeyValueData *pkvd);
-	int	m_iPose;// which sequence to display
-	static char *m_szPoses[7];
+	void KeyValue( KeyValueData *pkvd );
+	int m_iPose;// which sequence to display
+	static const char *m_szPoses[7];
 };
-
-
 
 //=========================================================
 // Sitting Scientist PROP

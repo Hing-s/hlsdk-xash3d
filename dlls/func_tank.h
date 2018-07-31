@@ -61,7 +61,7 @@ public:
 
 	void	StartRotSound(void);
 	void	StopRotSound(void);
-
+	virtual void	StopFire(void){}
 	// Bmodels don't go across transitions
 	virtual int	ObjectCaps(void) { return CBaseEntity::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
@@ -150,6 +150,7 @@ public:
 	void	KeyValue(KeyValueData *pkvd);
 	void	Fire(const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker);
 	void	Think(void);
+	virtual void	StopFire(void);
 	CLaser *GetLaser(void);
 
 	virtual int	Save(CSave &save);
