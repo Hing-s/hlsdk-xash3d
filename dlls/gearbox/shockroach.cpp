@@ -132,15 +132,17 @@ void CShockRoach::LeapTouch(CBaseEntity *pOther)
 
 
 		// Give the shockrifle weapon to the player, if not already in possession.
-		CBasePlayer* pPlayer = dynamic_cast<CBasePlayer*>(pOther);
-		if (pPlayer && !(pPlayer->pev->weapons & (1 << WEAPON_SHOCKRIFLE)))
+		if( pOther->IsPlayer() )
 		{
-			pPlayer->GiveNamedItem("weapon_shockrifle");
-			pPlayer->pev->weapons |= (1 << WEAPON_SHOCKRIFLE);
-			UTIL_Remove(this);
-			return;
+			CBasePlayer* pPlayer = (CBasePlayer*)pOther;
+			if (pPlayer && !(pPlayer->pev->weapons & (1 << WEAPON_SHOCKRIFLE)))
+			{
+				pPlayer->GiveNamedItem("weapon_shockrifle");
+				pPlayer->pev->weapons |= (1 << WEAPON_SHOCKRIFLE);
+				UTIL_Remove(this);
+				return;
+			}
 		}
-	
 		pOther->TakeDamage(pev, pev, GetDamageAmount(), DMG_SLASH);
 	}
 
