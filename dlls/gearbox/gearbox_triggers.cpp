@@ -313,8 +313,8 @@ public:
 	void Precache( void );
 	void KeyValue(KeyValueData* pkvd);
 	void EXPORT BlowerCannonThink( void );
-	void EXPORT BlowerCannonStart( void );
-	void EXPORT BlowerCannonUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+	void EXPORT BlowerCannonStart( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+	void EXPORT BlowerCannonStop( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
 	virtual int Save(CSave &save);
 	virtual int Restore(CRestore &restore);
@@ -369,14 +369,8 @@ void CBlowerCannon::Spawn(void)
 {
 	Precache();
 	UTIL_SetSize( pev, Vector(-16, -16, -16), Vector( 16, 16, 16 ) );
-	pev->solid = SOLID_TRIGGER;
-	SetUse( &CBlowerCannon::BlowerCannonUse );
-}
-
-void CBlowerCannon::BlowerCannonUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
-{
-	SetThink( &CBlowerCannon::BlowerCannonStart );
-	pev->nextthink = gpGlobals->time + 0.1;
+	pev->solid = SOLID_NOT;
+	SetUse( &CBlowerCannon::BlowerCannonStart );
 }
 
 void CBlowerCannon::Precache( void )
@@ -386,12 +380,25 @@ void CBlowerCannon::Precache( void )
 	UTIL_PrecacheOther( "spore" );
 }
 
+void CBlowerCannon::BlowerCannonStart( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	SetUse( &CBlowerCannon::BlowerCannonStop );
+	SetThink(&CBlowerCannon::BlowerCannonThink);
+	pev->nextthink = gpGlobals->time + 0.1;
+}
+
+void CBlowerCannon::BlowerCannonStop( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	SetUse( &CBlowerCannon::BlowerCannonStart );
+	SetThink( NULL );
+}
+
 void CBlowerCannon::BlowerCannonThink( void )
 {
 	CBaseEntity *pTarget = GetNextTarget();
 	Vector angles, direction;
 
-	if( pTarget && pTarget->IsAlive() )
+	if( pTarget )
 	{
 		direction = pTarget->pev->origin - pev->origin;
 		direction.z = m_iZOffSet + pTarget->pev->origin.z - pev->origin.z;
@@ -399,34 +406,34 @@ void CBlowerCannon::BlowerCannonThink( void )
 		Vector angles = UTIL_VecToAngles( direction );
 		UTIL_MakeVectors( angles );
 
-		if( m_iWeapType == 1 )//spore rocket
+		if( m_iWeapType == 1 )
 		{
+			//spore rocket
 			CSpore *pSpore = CSpore::CreateSporeRocket( pev->origin, angles, this );
 			pSpore->pev->velocity = pSpore->pev->velocity + gpGlobals->v_forward * 1500;
 		}
-		else if( m_iWeapType == 2 )//spore grenade
+		else if( m_iWeapType == 2 )
 		{
-			CSpore *pSpore = CSpore::CreateSporeGrenade( pev->origin, angles, this, FALSE );
+			//spore grenade
+ 			CSpore *pSpore = CSpore::CreateSporeGrenade( pev->origin, angles, this, FALSE );
 			pSpore->pev->velocity = pSpore->pev->velocity + gpGlobals->v_forward * 700;
 		}
-		else if( m_iWeapType == 3 )//shock beam
+		else if( m_iWeapType == 3 )
 		{
+			//shock beam
 			CBaseEntity *pShock = CBaseEntity::Create( "shock_beam", pev->origin, angles, this->edict() );
 			pShock->pev->velocity = gpGlobals->v_forward * 2000;
 		}
-		else if( m_iWeapType == 4 )//displacer ball
+		else if( m_iWeapType == 4 )
 		{
+			//displacer ball
 			CDisplacerBall::Shoot(pev, pev->origin, gpGlobals->v_forward * 500, angles);
 		}
+		else
+			ALERT(at_warning,"env_blowercannon: unknown weaptype %d",m_iWeapType);
 	}
 	if( m_iFireType == 2 )
 		SetThink( NULL );
 
-	pev->nextthink = gpGlobals->time + m_flDelay;
-}
-
-void CBlowerCannon::BlowerCannonStart( void )
-{
-	SetThink(&CBlowerCannon::BlowerCannonThink);
 	pev->nextthink = gpGlobals->time + m_flDelay;
 }
