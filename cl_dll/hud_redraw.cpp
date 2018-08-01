@@ -390,8 +390,8 @@ void CHud::DrawDarkRectangle( int x, int y, int wide, int tall )
 {
 	//gEngfuncs.pTriAPI->RenderMode( kRenderTransTexture );
 	gEngfuncs.pfnFillRGBABlend( x, y, wide, tall, 0, 0, 0, 255 * 0.6 );
-	FillRGBA( x + 1, y, wide - 1, 1, 255, 140, 0, 255 );
-	FillRGBA( x, y, 1, tall - 1, 255, 140, 0, 255 );
-	FillRGBA( x + wide - 1, y + 1, 1, tall - 1, 255, 140, 0, 255 );
-	FillRGBA( x, y + tall - 1, wide - 1, 1, 255, 140, 0, 255 );
+	FillRGBA( x + 1, y, wide - 1, 1, 0, 180, 0, 255 );
+	FillRGBA( x, y, 1, tall - 1, 0, 180, 0, 255 );
+	FillRGBA( x + wide - 1, y + 1, 1, tall - 1, 0, 180, 0, 255 );
+	FillRGBA( x, y + tall - 1, wide - 1, 1, 0, 180, 0, 255 );
 }
