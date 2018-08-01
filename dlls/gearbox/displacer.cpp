@@ -84,8 +84,8 @@ void CDisplacerBall::ArmBeam( int iSide )
 	Vector vecEnd = (iSide * gpGlobals->v_right * RANDOM_FLOAT( 0.0, 1.0 ) + vecAim) * 512.0 + vecSrc;
 	UTIL_TraceLine( &vecSrc.x, &vecEnd.x, dont_ignore_monsters, ENT( pev ), &tr );
 
-	if( flDist > tr.flFraction )
-		flDist = tr.flFraction;
+ 	if( tr.flFraction < 1 )
+		flDist = 0;
 
 	// Couldn't find anything close enough
 	if( flDist == 1.0 )
@@ -112,14 +112,14 @@ void CDisplacerBall::ArmBeam( int iSide )
 		m_pBeam[ m_iBeams ]->EntsInit( pHit->entindex(), entindex() );
 		m_pBeam[ m_iBeams ]->SetColor( 255, 255, 255 );
 		m_pBeam[ m_iBeams ]->SetBrightness( 255 );
-		m_pBeam[ m_iBeams ]->SetNoise( 10 );
+		m_pBeam[ m_iBeams ]->SetNoise( 20 );
 
 		RadiusDamage( tr.vecEndPos, pev, pevOwner, 25, 15, CLASS_NONE, DMG_ENERGYBEAM );
 	}
 	else
 	{
 		m_pBeam[ m_iBeams ]->PointEntInit( tr.vecEndPos, entindex() );
-		m_pBeam[ m_iBeams ]->SetColor( 96, 128, 16 );
+		m_pBeam[ m_iBeams ]->SetColor( 180, 255, 180 );
 		m_pBeam[ m_iBeams ]->SetBrightness( 255 );
 		m_pBeam[ m_iBeams ]->SetNoise( 80 );
 	}
