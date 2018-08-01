@@ -494,7 +494,7 @@ void CHalfLifeMultiplay::InitHUD( CBasePlayer *pl )
 		WRITE_SHORT( 0 );
 		WRITE_SHORT( 0 );
 		WRITE_SHORT( 0 );
-		WRITE_SHORT( 0 );
+		WRITE_SHORT( 5 );
 	MESSAGE_END();
 
 	SendMOTDToClient( pl->edict() );
@@ -512,7 +512,7 @@ void CHalfLifeMultiplay::InitHUD( CBasePlayer *pl )
 				WRITE_SHORT( (int)plr->pev->frags );
 				WRITE_SHORT( plr->m_iDeaths );
 				WRITE_SHORT( 0 );
-				WRITE_SHORT( GetTeamIndex( plr->m_szTeamName ) + 1 );
+				WRITE_SHORT( 5 );
 			MESSAGE_END();
 		}
 	}
@@ -697,7 +697,7 @@ void CHalfLifeMultiplay::PlayerKilled( CBasePlayer *pVictim, entvars_t *pKiller,
 		WRITE_SHORT( (int)pVictim->pev->frags );
 		WRITE_SHORT( pVictim->m_iDeaths );
 		WRITE_SHORT( 0 );
-		WRITE_SHORT( GetTeamIndex( pVictim->m_szTeamName ) + 1 );
+		WRITE_SHORT( 5 );
 	MESSAGE_END();
 
 	// killers score, if it's a player
@@ -711,7 +711,7 @@ void CHalfLifeMultiplay::PlayerKilled( CBasePlayer *pVictim, entvars_t *pKiller,
 			WRITE_SHORT( (int)PK->pev->frags );
 			WRITE_SHORT( PK->m_iDeaths );
 			WRITE_SHORT( 0 );
-			WRITE_SHORT( GetTeamIndex( PK->m_szTeamName ) + 1 );
+			WRITE_SHORT( 5 );
 		MESSAGE_END();
 
 		// let the killer paint another decal as soon as he'd like.
