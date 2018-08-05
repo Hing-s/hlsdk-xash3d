@@ -58,7 +58,6 @@ set (SVDLL_SOURCES
 	gearbox/generic_items.cpp
 	gearbox/geneworm.cpp
 	gearbox/gonome.cpp
-	gearbox/grapple_tonguetip.cpp
 	gearbox/grapple.cpp
 	gearbox/houndeye_dead.cpp
 	gearbox/islave_dead.cpp
@@ -158,6 +157,7 @@ set (SVDLL_SOURCES
 	playermonster.cpp
 	python.cpp
 	rat.cpp
+	rcallymonster.cpp
 	roach.cpp
 	rpg.cpp
 	satchel.cpp
