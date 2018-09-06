@@ -626,7 +626,7 @@ void CGeneWorm::StartThink(void)
     pev->view_ofs = vecEyePos - pev->origin;
 
     pev->frame = 0;
-    pev->sequence = LookupSequence("entry");
+    pev->sequence = LookupSequence("idle");
     ResetSequenceInfo();
     m_flNextMeleeTime = gpGlobals->time;
     m_flNextRangeTime = gpGlobals->time;
@@ -723,8 +723,11 @@ void CGeneWorm::DyingThink(void)
             UTIL_Remove(m_pBall);
             m_pBall = NULL;
         }
-        while(entity = UTIL_FindEntityByClassname(entity, "monster_shocktrooper"))
-            entity->SUB_StartFadeOut();
+
+
+        entity = NULL;
+        while((entity = UTIL_FindEntityByClassname(entity, "monster_shocktrooper")))
+            UTIL_Remove(entity);
     }
 }
 //=========================================================

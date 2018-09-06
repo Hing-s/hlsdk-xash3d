@@ -174,8 +174,8 @@ void CShock::Touch(CBaseEntity *pOther)
 		else
 		{
 			CBaseMonster* pMonster = pOther->MyMonsterPointer();
-			if (pMonster)
-				pMonster->GlowShellOn( Vector( 0, 220, 255 ), .5f );
+            if (pMonster && !FClassnameIs(pMonster->pev, "monster_geneworm"))
+                pMonster->GlowShellOn( Vector( 0, 220, 255 ), .5f );
 		}
 		pOther->TraceAttack(pev, pev->dmg, pev->velocity.Normalize(), &tr, damageType );
 		ApplyMultiDamage(pev, pevOwner ? pevOwner : pev);
