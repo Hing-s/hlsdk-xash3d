@@ -425,7 +425,7 @@ void CBarnacleGrapple::WeaponIdle( void )
 {
 	ResetEmptySound();
 
-	if( m_flTimeWeaponIdle > gpGlobals->time )
+    if( m_flTimeWeaponIdle > gpGlobals->time )
 		return;
 
 	if( m_FireState != OFF )
@@ -443,19 +443,19 @@ void CBarnacleGrapple::WeaponIdle( void )
 	if( flNextIdle <= 0.5 )
 	{
 		iAnim = BGRAPPLE_LONGIDLE;
-		m_flTimeWeaponIdle = gpGlobals->time + 10.0;
+        m_flTimeWeaponIdle = gpGlobals->time + 10.0;
 	}
 	else if( flNextIdle > 0.95 )
 	{
 		EMIT_SOUND_DYN( ENT(m_pPlayer->pev), CHAN_STATIC, "weapons/bgrapple_cough.wav", VOL_NORM, ATTN_NORM, 0, PITCH_NORM );
 
 		iAnim = BGRAPPLE_COUGH;
-		m_flTimeWeaponIdle = gpGlobals->time + 4.6;
+        m_flTimeWeaponIdle = gpGlobals->time + 4.6;
 	}
 	else
 	{
 		iAnim = BGRAPPLE_BREATHE;
-		m_flTimeWeaponIdle = gpGlobals->time + 2.566;
+        m_flTimeWeaponIdle = gpGlobals->time + 2.566;
 	}
 
 	SendWeaponAnim( iAnim );
@@ -465,7 +465,7 @@ void CBarnacleGrapple::PrimaryAttack( void )
 {
 	if( m_bMissed )
 	{
-		m_flTimeWeaponIdle = gpGlobals->time + 0.1;
+        m_flTimeWeaponIdle = gpGlobals->time + 0.1;
 		return;
 	}
 
@@ -480,7 +480,7 @@ void CBarnacleGrapple::PrimaryAttack( void )
 			if( !pTarget )
 			{
 				EndAttack();
-				return;
+                return;
 			}
 
 			if( m_pTip->GetGrappleType() > SMALL )
@@ -518,7 +518,7 @@ void CBarnacleGrapple::PrimaryAttack( void )
 					pTarget->pev->velocity = pTarget->pev->velocity.Normalize() * 450.0;
 				}
 
-				break;
+                break;
 
 			case MEDIUM:
 			case LARGE:
@@ -564,7 +564,7 @@ void CBarnacleGrapple::PrimaryAttack( void )
 			EMIT_SOUND_DYN( ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/bgrapple_release.wav", 0.98, ATTN_NORM, 0, 125 );
 
 			EndAttack();
-			return;
+            return;
 		}
 	}
 #endif
@@ -612,8 +612,8 @@ void CBarnacleGrapple::PrimaryAttack( void )
 
 	if( !m_pTip )
 	{
-		m_flNextPrimaryAttack = gpGlobals->time + 0.01;
-		return;
+        m_flNextPrimaryAttack = gpGlobals->time + 0.01;
+        return;
 	}
 
 	if( m_pTip->GetGrappleType() != FIXED && m_pTip->IsStuck() )
@@ -712,16 +712,7 @@ void CBarnacleGrapple::PrimaryAttack( void )
 	}
 
 	//TODO: CTF support - Solokiller
-	/*
-	if( g_pGameRules->IsMultiplayer() && g_pGameRules->IsCTF() )
-	{
-		m_flNextPrimaryAttack = gpGlobals->time;
-	}
-	else
-	*/
-	{
-		m_flNextPrimaryAttack = gpGlobals->time + 0.01;
-	}
+    m_flNextPrimaryAttack = 0.01;
 }
 
 void CBarnacleGrapple::Fire( Vector vecOrigin, Vector vecDir )
@@ -764,16 +755,7 @@ void CBarnacleGrapple::EndAttack( void )
 	m_flTimeWeaponIdle = gpGlobals->time + 0.9;
 
 	//TODO: CTF support - Solokiller
-	/*
-	if( g_pGameRules->IsMultiplayer() && g_pGameRules->IsCTF() )
-	{
-	m_flNextPrimaryAttack = gpGlobals->time;
-	}
-	else
-	*/
-	{
-		m_flNextPrimaryAttack = gpGlobals->time + 0.01;
-	}
+    m_flNextPrimaryAttack = 0.01;
 
 	DestroyEffect();
 
